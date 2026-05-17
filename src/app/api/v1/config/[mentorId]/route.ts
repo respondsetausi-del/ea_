@@ -11,10 +11,11 @@ function getSupabase() {
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ mentorId: string }> }
 ) {
   const { mentorId } = await params;
+  const email = req.nextUrl.searchParams.get("email");
 
   const supabase = getSupabase();
   const { data: ea, error: eaError } = await supabase
@@ -34,6 +35,24 @@ export async function GET(
     .eq("distributor_id", ea.distributor_id)
     .single();
 
+  let user_authorized: boolean | null = null;
+  if (email) {
+    const { data: appUser } = await supabase
+      .from("app_users")
+      .select("id, is_active")
+      .eq("ea_id", ea.id)
+      .eq("email", email.toLowerCase())
+      .single();
+    user_authorized = !!(appUser?.is_active);
+
+    if (appUser) {
+      await supabase
+        .from("app_users")
+        .update({ last_seen: new Date().toISOString() })
+        .eq("id", appUser.id);
+    }
+  }
+
   return NextResponse.json({
     ea: {
       id: ea.id,
@@ -50,5 +69,6 @@ export async function GET(
           tagline: branding.tagline,
         }
       : null,
+    ...(email !== null && { user_authorized }),
   });
 }

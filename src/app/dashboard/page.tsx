@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Bot, Users, Palette, Activity } from "lucide-react";
 import Link from "next/link";
 
@@ -11,6 +11,11 @@ export default function DashboardOverview() {
 
   useEffect(() => {
     async function load() {
+      if (DEV_MODE) {
+        setStats({ eas: 2, users: 5, hasBranding: true });
+        setLoading(false);
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -39,8 +44,8 @@ export default function DashboardOverview() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-black tracking-wide mb-1">Dashboard</h2>
-        <p className="text-zinc-500 text-sm">Manage your white-label trading app</p>
+        <h2 className="text-xl font-black tracking-wide mb-1 text-gray-900">Dashboard</h2>
+        <p className="text-gray-500 text-sm">Manage your white-label trading app</p>
       </div>
 
       {loading ? (
@@ -54,22 +59,22 @@ export default function DashboardOverview() {
               const Icon = card.icon;
               return (
                 <Link key={card.label} href={card.href}
-                  className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-5 hover:border-cyan-500/30 transition group">
+                  className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-cyan-400 hover:shadow-md transition group">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                      <Icon className="text-cyan-400" size={20} />
+                    <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center">
+                      <Icon className="text-cyan-500" size={20} />
                     </div>
-                    <Activity className="text-zinc-700 group-hover:text-cyan-500/40 transition" size={16} />
+                    <Activity className="text-gray-300 group-hover:text-cyan-400 transition" size={16} />
                   </div>
-                  <p className="text-2xl font-black text-white">{card.value}</p>
-                  <p className="text-xs text-zinc-500 mt-1 font-medium">{card.label}</p>
+                  <p className="text-2xl font-black text-gray-900">{card.value}</p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">{card.label}</p>
                 </Link>
               );
             })}
           </div>
 
-          <div className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-6">
-            <h3 className="text-sm font-bold text-white mb-3">Quick Start</h3>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Quick Start</h3>
             <div className="space-y-3">
               <QuickStep num={1} done={stats.hasBranding} label="Set up your branding" desc="Upload your logo, robot image, and choose your app name & colors" href="/dashboard/branding" />
               <QuickStep num={2} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
@@ -84,13 +89,13 @@ export default function DashboardOverview() {
 
 function QuickStep({ num, done, label, desc, href }: { num: number; done: boolean; label: string; desc: string; href: string }) {
   return (
-    <Link href={href} className="flex items-start gap-4 p-3 rounded-xl hover:bg-zinc-900/50 transition">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${done ? "bg-green-500/20 text-green-400" : "bg-zinc-800 text-zinc-500"}`}>
+    <Link href={href} className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${done ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
         {done ? "✓" : num}
       </div>
       <div>
-        <p className={`text-sm font-semibold ${done ? "text-green-400" : "text-white"}`}>{label}</p>
-        <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+        <p className={`text-sm font-semibold ${done ? "text-green-600" : "text-gray-900"}`}>{label}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
       </div>
     </Link>
   );

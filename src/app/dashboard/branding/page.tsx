@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Upload, Save, Image as ImageIcon } from "lucide-react";
 import type { Branding } from "@/lib/database.types";
 
@@ -26,6 +26,10 @@ export default function BrandingPage() {
 
   useEffect(() => {
     async function load() {
+      if (DEV_MODE) {
+        setLoading(false);
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from("branding").select("*").eq("distributor_id", user.id).single();
@@ -106,54 +110,54 @@ export default function BrandingPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-xl font-black tracking-wide">White-Label Branding</h2>
-        <p className="text-zinc-500 text-sm mt-1">Customize how your app looks for your users</p>
+        <h2 className="text-xl font-black tracking-wide text-gray-900">White-Label Branding</h2>
+        <p className="text-gray-500 text-sm mt-1">Customize how your app looks for your users</p>
       </div>
 
-      <div className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-6 space-y-6">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
         {/* App Name */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">APP NAME</label>
+          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">APP NAME</label>
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
             placeholder="Your App Name" />
         </div>
 
         {/* Tagline */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">TAGLINE</label>
+          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">TAGLINE</label>
           <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-            className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
             placeholder="e.g. Fully automated mobile EA" />
         </div>
 
         {/* Glow Color */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">GLOW COLOR</label>
+          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">GLOW COLOR</label>
           <div className="flex flex-wrap gap-3">
             {GLOW_PRESETS.map(color => (
               <button key={color} onClick={() => setForm(f => ({ ...f, glow_color: color }))}
-                className={`w-8 h-8 rounded-full border-2 transition ${form.glow_color === color ? "border-white scale-110" : "border-transparent"}`}
+                className={`w-8 h-8 rounded-full border-2 transition ${form.glow_color === color ? "border-gray-900 scale-110" : "border-gray-200"}`}
                 style={{ backgroundColor: color, boxShadow: form.glow_color === color ? `0 0 10px ${color}` : "none" }} />
             ))}
           </div>
         </div>
 
-        <div className="h-px bg-zinc-800/60" />
+        <div className="h-px bg-gray-200" />
 
         {/* Logo Upload */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">APP LOGO</label>
+          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">APP LOGO</label>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl border border-zinc-800 bg-zinc-900/60 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-16 h-16 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
               {logoPreview ? (
                 <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <ImageIcon className="text-zinc-700" size={24} />
+                <ImageIcon className="text-gray-300" size={24} />
               )}
             </div>
             <button onClick={() => logoRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-medium hover:border-cyan-500/40 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-cyan-400 transition">
               <Upload size={14} />
               Upload Logo
             </button>
@@ -163,10 +167,10 @@ export default function BrandingPage() {
 
         {/* Robot Image Upload */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">ROBOT / HERO IMAGE</label>
-          <p className="text-[10px] text-zinc-600 mb-3">This appears as the main avatar in the app</p>
+          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">ROBOT / HERO IMAGE</label>
+          <p className="text-[10px] text-gray-400 mb-3">This appears as the main avatar in the app</p>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full border-2 border-zinc-800 bg-zinc-900/60 flex items-center justify-center overflow-hidden shrink-0"
+            <div className="w-16 h-16 rounded-full border-2 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0"
                  style={{ borderColor: form.glow_color + "60" }}>
               {robotPreview ? (
                 <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
@@ -175,7 +179,7 @@ export default function BrandingPage() {
               )}
             </div>
             <button onClick={() => robotRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-medium hover:border-cyan-500/40 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-cyan-400 transition">
               <Upload size={14} />
               Upload Image
             </button>
@@ -185,8 +189,8 @@ export default function BrandingPage() {
       </div>
 
       {/* Preview */}
-      <div className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-6">
-        <p className="text-[10px] font-bold tracking-widest text-zinc-500 mb-4">PREVIEW</p>
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <p className="text-[10px] font-bold tracking-widest text-gray-400 mb-4">PREVIEW</p>
         <div className="flex flex-col items-center py-6">
           <div className="w-16 h-16 rounded-full border-2 flex items-center justify-center overflow-hidden mb-3"
                style={{ borderColor: form.glow_color, boxShadow: `0 0 15px ${form.glow_color}40` }}>
@@ -197,14 +201,13 @@ export default function BrandingPage() {
             )}
           </div>
           <p className="text-lg font-black tracking-wider" style={{ color: form.glow_color }}>{form.app_name || "App Name"}</p>
-          {form.tagline && <p className="text-xs text-zinc-500 mt-1">{form.tagline}</p>}
+          {form.tagline && <p className="text-xs text-gray-500 mt-1">{form.tagline}</p>}
         </div>
       </div>
 
       {/* Save */}
       <button onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-500 text-black text-sm font-bold hover:bg-cyan-400 transition disabled:opacity-50"
-        style={{ boxShadow: '0 0 10px rgba(0,191,255,0.4)' }}>
+        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition disabled:opacity-50 shadow-sm">
         <Save size={16} />
         {saving ? "Saving..." : success ? "Saved!" : "Save Branding"}
       </button>
