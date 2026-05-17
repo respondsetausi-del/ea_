@@ -1,0 +1,97 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Bot, Users, Palette, Activity } from "lucide-react";
+import Link from "next/link";
+
+export default function DashboardOverview() {
+  const [stats, setStats] = useState({ eas: 0, users: 0, hasBranding: false });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [easRes, usersRes, brandRes] = await Promise.all([
+        supabase.from("eas").select("id", { count: "exact" }).eq("distributor_id", user.id),
+        supabase.from("app_users").select("id", { count: "exact" }).eq("distributor_id", user.id),
+        supabase.from("branding").select("id").eq("distributor_id", user.id).single(),
+      ]);
+
+      setStats({
+        eas: easRes.count || 0,
+        users: usersRes.count || 0,
+        hasBranding: !!brandRes.data,
+      });
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const cards = [
+    { label: "Trading Bots", value: stats.eas, icon: Bot, href: "/dashboard/eas", color: "cyan" },
+    { label: "App Users", value: stats.users, icon: Users, href: "/dashboard/users", color: "green" },
+    { label: "Branding", value: stats.hasBranding ? "Set Up" : "Not Set", icon: Palette, href: "/dashboard/branding", color: "purple" },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-black tracking-wide mb-1">Dashboard</h2>
+        <p className="text-zinc-500 text-sm">Manage your white-label trading app</p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {cards.map(card => {
+              const Icon = card.icon;
+              return (
+                <Link key={card.label} href={card.href}
+                  className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-5 hover:border-cyan-500/30 transition group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                      <Icon className="text-cyan-400" size={20} />
+                    </div>
+                    <Activity className="text-zinc-700 group-hover:text-cyan-500/40 transition" size={16} />
+                  </div>
+                  <p className="text-2xl font-black text-white">{card.value}</p>
+                  <p className="text-xs text-zinc-500 mt-1 font-medium">{card.label}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-6">
+            <h3 className="text-sm font-bold text-white mb-3">Quick Start</h3>
+            <div className="space-y-3">
+              <QuickStep num={1} done={stats.hasBranding} label="Set up your branding" desc="Upload your logo, robot image, and choose your app name & colors" href="/dashboard/branding" />
+              <QuickStep num={2} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
+              <QuickStep num={3} done={stats.users > 0} label="Invite Users" desc="Add user emails so they can access your branded app" href="/dashboard/users" />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function QuickStep({ num, done, label, desc, href }: { num: number; done: boolean; label: string; desc: string; href: string }) {
+  return (
+    <Link href={href} className="flex items-start gap-4 p-3 rounded-xl hover:bg-zinc-900/50 transition">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${done ? "bg-green-500/20 text-green-400" : "bg-zinc-800 text-zinc-500"}`}>
+        {done ? "✓" : num}
+      </div>
+      <div>
+        <p className={`text-sm font-semibold ${done ? "text-green-400" : "text-white"}`}>{label}</p>
+        <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+      </div>
+    </Link>
+  );
+}

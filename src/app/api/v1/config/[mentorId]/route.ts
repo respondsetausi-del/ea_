@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ mentorId: string }> }
+) {
+  const { mentorId } = await params;
+
+  const supabase = getSupabase();
+  const { data: ea, error: eaError } = await supabase
+    .from("eas")
+    .select("*")
+    .eq("mentor_id", mentorId)
+    .eq("is_active", true)
+    .single();
+
+  if (eaError || !ea) {
+    return NextResponse.json({ error: "EA not found or inactive" }, { status: 404 });
+  }
+
+  const { data: branding } = await supabase
+    .from("branding")
+    .select("*")
+    .eq("distributor_id", ea.distributor_id)
+    .single();
+
+  return NextResponse.json({
+    ea: {
+      id: ea.id,
+      name: ea.name,
+      description: ea.description,
+      mentor_id: ea.mentor_id,
+    },
+    branding: branding
+      ? {
+          app_name: branding.app_name,
+          glow_color: branding.glow_color,
+          logo_url: branding.logo_url,
+          robot_image_url: branding.robot_image_url,
+          tagline: branding.tagline,
+        }
+      : null,
+  });
+}
