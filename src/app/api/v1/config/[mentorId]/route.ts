@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
 }
 
 export const dynamic = "force-dynamic";
@@ -14,10 +14,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ mentorId: string }> }
 ) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: "Server not configured" }, { status: 503 });
+  }
+
   const { mentorId } = await params;
   const email = req.nextUrl.searchParams.get("email");
 
-  const supabase = getSupabase();
   const { data: ea, error: eaError } = await supabase
     .from("eas")
     .select("*")

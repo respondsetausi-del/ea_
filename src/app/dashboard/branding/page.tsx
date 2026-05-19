@@ -15,7 +15,7 @@ export default function BrandingPage() {
   const [branding, setBranding] = useState<Branding | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ app_name: "Free Robot", glow_color: "#00BFFF", tagline: "" });
+  const [form, setForm] = useState({ app_name: "Free Robot", glow_color: "#FFFFFF", tagline: "" });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [robotPreview, setRobotPreview] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -102,7 +102,7 @@ export default function BrandingPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

@@ -24,7 +24,7 @@ create table public.branding (
   id uuid primary key default gen_random_uuid(),
   distributor_id uuid not null references public.distributors(id) on delete cascade,
   app_name text not null default 'Free Robot',
-  glow_color text not null default '#00BFFF',
+  glow_color text not null default '#FFFFFF',
   logo_url text,
   robot_image_url text,
   tagline text,
