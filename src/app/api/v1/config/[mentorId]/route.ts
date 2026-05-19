@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept",
+};
+
+function corsJson(body: object, init?: { status?: number }) {
+  return NextResponse.json(body, { ...init, headers: CORS_HEADERS });
+}
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -10,13 +20,17 @@ function getSupabase() {
 
 export const dynamic = "force-dynamic";
 
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ mentorId: string }> }
 ) {
   const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({ error: "Server not configured" }, { status: 503 });
+    return corsJson({ error: "Server not configured" }, { status: 503 });
   }
 
   const { mentorId } = await params;
@@ -30,7 +44,7 @@ export async function GET(
     .single();
 
   if (eaError || !ea) {
-    return NextResponse.json({ error: "EA not found or inactive" }, { status: 404 });
+    return corsJson({ error: "EA not found or inactive" }, { status: 404 });
   }
 
   const { data: branding } = await supabase
@@ -57,7 +71,7 @@ export async function GET(
     }
   }
 
-  return NextResponse.json({
+  return corsJson({
     ea: {
       id: ea.id,
       name: ea.name,
