@@ -9,7 +9,7 @@ export default function EAsPage() {
   const [eas, setEAs] = useState<EA[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", mentor_id: "" });
+  const [form, setForm] = useState({ name: "", description: "", license_key: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
@@ -43,16 +43,16 @@ export default function EAsPage() {
       distributor_id: user.id,
       name: form.name,
       description: form.description || null,
-      mentor_id: form.mentor_id,
+      mentor_id: form.license_key,
     });
 
     if (error) {
-      setError(error.message.includes("duplicate") ? "Mentor ID already exists" : error.message);
+      setError(error.message.includes("duplicate") ? "License key already exists" : error.message);
       setSaving(false);
       return;
     }
 
-    setForm({ name: "", description: "", mentor_id: "" });
+    setForm({ name: "", description: "", license_key: "" });
     setShowForm(false);
     setSaving(false);
     load();
@@ -69,9 +69,9 @@ export default function EAsPage() {
     load();
   };
 
-  const copyMentorId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopied(id);
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   };
 
@@ -80,7 +80,7 @@ export default function EAsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black tracking-wide text-gray-900">Trading Bots</h2>
-          <p className="text-gray-500 text-sm mt-1">Create and manage your EAs. Each EA has a unique Mentor ID for user access.</p>
+          <p className="text-gray-500 text-sm mt-1">Create and manage your EAs. Each EA has a unique License Key for user access.</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition shadow-sm">
@@ -100,10 +100,10 @@ export default function EAsPage() {
                 placeholder="e.g. Gold Scalper Pro" required />
             </div>
             <div>
-              <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">MENTOR ID</label>
-              <input value={form.mentor_id} onChange={e => setForm(f => ({ ...f, mentor_id: e.target.value }))}
+              <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">LICENSE KEY</label>
+              <input value={form.license_key} onChange={e => setForm(f => ({ ...f, license_key: e.target.value }))}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
-                placeholder="Unique ID users enter to login" required />
+                placeholder="Unique key users enter to login" required />
             </div>
           </div>
           <div>
@@ -149,8 +149,8 @@ export default function EAsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] text-gray-400 font-mono">ID: {ea.mentor_id}</span>
-                  <button onClick={() => copyMentorId(ea.mentor_id)} className="text-gray-400 hover:text-gray-900 transition">
+                  <span className="text-[10px] text-gray-400 font-mono">License: {ea.mentor_id}</span>
+                  <button onClick={() => copyKey(ea.mentor_id)} className="text-gray-400 hover:text-gray-900 transition">
                     {copied === ea.mentor_id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                   </button>
                 </div>
