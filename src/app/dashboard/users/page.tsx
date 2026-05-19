@@ -94,7 +94,7 @@ export default function UsersPage() {
           <p className="text-gray-500 text-sm mt-1">Manage who can access your branded app</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition shadow-sm">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition shadow-sm">
           <Plus size={16} />
           Add User
         </button>
@@ -107,13 +107,13 @@ export default function UsersPage() {
             <div>
               <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">EMAIL</label>
               <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
                 placeholder="user@example.com" required />
             </div>
             <div>
               <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">TRADING BOT</label>
               <select value={form.ea_id} onChange={e => setForm(f => ({ ...f, ea_id: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition">
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition">
                 <option value="">Select EA...</option>
                 {eas.map(ea => <option key={ea.id} value={ea.id}>{ea.name} ({ea.mentor_id})</option>)}
               </select>
@@ -122,7 +122,7 @@ export default function UsersPage() {
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition disabled:opacity-50">
+              className="px-6 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50">
               {saving ? "Adding..." : "Add User"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
@@ -135,7 +135,7 @@ export default function UsersPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-20">
@@ -145,7 +145,7 @@ export default function UsersPage() {
         <div className="space-y-2">
           {users.map(u => (
             <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${u.is_active ? "bg-cyan-50 text-cyan-500" : "bg-gray-100 text-gray-400"}`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${u.is_active ? "bg-gray-100 text-gray-900" : "bg-gray-100 text-gray-400"}`}>
                 {u.email.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">

@@ -102,7 +102,7 @@ export default function BrandingPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -119,7 +119,7 @@ export default function BrandingPage() {
         <div>
           <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">APP NAME</label>
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
             placeholder="Your App Name" />
         </div>
 
@@ -127,7 +127,7 @@ export default function BrandingPage() {
         <div>
           <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">TAGLINE</label>
           <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
             placeholder="e.g. Fully automated mobile EA" />
         </div>
 
@@ -157,7 +157,7 @@ export default function BrandingPage() {
               )}
             </div>
             <button onClick={() => logoRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-cyan-400 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-gray-900 transition">
               <Upload size={14} />
               Upload Logo
             </button>
@@ -179,7 +179,7 @@ export default function BrandingPage() {
               )}
             </div>
             <button onClick={() => robotRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-cyan-400 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-gray-900 transition">
               <Upload size={14} />
               Upload Image
             </button>
@@ -207,7 +207,7 @@ export default function BrandingPage() {
 
       {/* Save */}
       <button onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition disabled:opacity-50 shadow-sm">
+        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50 shadow-sm">
         <Save size={16} />
         {saving ? "Saving..." : success ? "Saved!" : "Save Branding"}
       </button>

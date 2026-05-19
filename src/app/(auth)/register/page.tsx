@@ -39,9 +39,8 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-full border-2 border-cyan-500/60 flex items-center justify-center mb-4"
-               style={{ boxShadow: '0 0 20px rgba(0,191,255,0.3)' }}>
-            <UserPlus className="text-cyan-400" size={24} />
+          <div className="w-16 h-16 mx-auto rounded-full border-2 border-white/60 flex items-center justify-center mb-4">
+            <UserPlus className="text-white" size={24} />
           </div>
           <h1 className="text-2xl font-black tracking-wider text-white">REGISTER</h1>
           <p className="text-zinc-500 text-xs mt-1">Create your distributor account</p>
@@ -54,7 +53,7 @@ export default function RegisterPage() {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition"
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition"
               placeholder="John Doe"
               required
             />
@@ -66,7 +65,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition"
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition"
               placeholder="you@example.com"
               required
             />
@@ -79,7 +78,7 @@ export default function RegisterPage() {
                 type={showPw ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition pr-12"
+                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition pr-12"
                 placeholder="Min 6 characters"
                 minLength={6}
                 required
@@ -95,16 +94,15 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-cyan-500 text-black font-bold text-sm tracking-wide hover:bg-cyan-400 transition disabled:opacity-50"
-            style={{ boxShadow: '0 0 12px rgba(0,191,255,0.5)' }}
+            className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-zinc-200 transition disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="text-center text-zinc-600 text-xs mt-6">
+        <p className="text-center text-zinc-500 text-xs mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-cyan-400 hover:text-cyan-300">Sign In</Link>
+          <Link href="/login" className="text-white hover:text-zinc-300">Sign In</Link>
         </p>
       </div>
     </div>

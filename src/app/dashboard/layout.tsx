@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -55,10 +55,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="h-1 bg-cyan-500" />
+        <div className="h-1 bg-white" />
         <div className="px-5 pt-5 pb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-black tracking-widest text-cyan-600">FREE ROBOT</h2>
+            <h2 className="text-sm font-black tracking-widest text-gray-900">FREE ROBOT</h2>
             <p className="text-[10px] text-gray-400 mt-0.5">Distributor Panel</p>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <Link key={item.href} href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${active ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${active ? "bg-gray-900 text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
                 <Icon size={18} />
                 {item.label}
               </Link>

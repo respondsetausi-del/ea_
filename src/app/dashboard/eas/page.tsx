@@ -83,7 +83,7 @@ export default function EAsPage() {
           <p className="text-gray-500 text-sm mt-1">Create and manage your EAs. Each EA has a unique Mentor ID for user access.</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition shadow-sm">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition shadow-sm">
           <Plus size={16} />
           New EA
         </button>
@@ -96,26 +96,26 @@ export default function EAsPage() {
             <div>
               <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">EA NAME</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
                 placeholder="e.g. Gold Scalper Pro" required />
             </div>
             <div>
               <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">MENTOR ID</label>
               <input value={form.mentor_id} onChange={e => setForm(f => ({ ...f, mentor_id: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
                 placeholder="Unique ID users enter to login" required />
             </div>
           </div>
           <div>
             <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">DESCRIPTION</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition resize-none h-20"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition resize-none h-20"
               placeholder="Optional description" />
           </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-bold hover:bg-cyan-600 transition disabled:opacity-50">
+              className="px-6 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50">
               {saving ? "Creating..." : "Create EA"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
@@ -128,7 +128,7 @@ export default function EAsPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       ) : eas.length === 0 ? (
         <div className="text-center py-20">
@@ -138,7 +138,7 @@ export default function EAsPage() {
         <div className="space-y-3">
           {eas.map(ea => (
             <div key={ea.id} className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black ${ea.is_active ? "bg-cyan-50 text-cyan-500" : "bg-gray-100 text-gray-400"}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black ${ea.is_active ? "bg-gray-100 text-gray-900" : "bg-gray-100 text-gray-400"}`}>
                 {ea.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export default function EAsPage() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] text-gray-400 font-mono">ID: {ea.mentor_id}</span>
-                  <button onClick={() => copyMentorId(ea.mentor_id)} className="text-gray-400 hover:text-cyan-500 transition">
+                  <button onClick={() => copyMentorId(ea.mentor_id)} className="text-gray-400 hover:text-gray-900 transition">
                     {copied === ea.mentor_id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                   </button>
                 </div>

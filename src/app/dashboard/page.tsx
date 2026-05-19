@@ -50,7 +50,7 @@ export default function DashboardOverview() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <>
@@ -59,12 +59,12 @@ export default function DashboardOverview() {
               const Icon = card.icon;
               return (
                 <Link key={card.label} href={card.href}
-                  className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-cyan-400 hover:shadow-md transition group">
+                  className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-900 hover:shadow-md transition group">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center">
-                      <Icon className="text-cyan-500" size={20} />
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                      <Icon className="text-gray-900" size={20} />
                     </div>
-                    <Activity className="text-gray-300 group-hover:text-cyan-400 transition" size={16} />
+                    <Activity className="text-gray-300 group-hover:text-gray-900 transition" size={16} />
                   </div>
                   <p className="text-2xl font-black text-gray-900">{card.value}</p>
                   <p className="text-xs text-gray-500 mt-1 font-medium">{card.label}</p>
