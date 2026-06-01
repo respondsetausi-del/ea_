@@ -6,28 +6,30 @@ import { Bot, Users, Palette, Activity } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardOverview() {
-  const [stats, setStats] = useState({ eas: 0, users: 0, hasBranding: false });
+  const [stats, setStats] = useState({ eas: 0, users: 0, licenses: 0, hasBranding: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       if (DEV_MODE) {
-        setStats({ eas: 2, users: 5, hasBranding: true });
+        setStats({ eas: 2, users: 5, licenses: 3, hasBranding: true });
         setLoading(false);
         return;
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [easRes, usersRes, brandRes] = await Promise.all([
-        supabase.from("eas").select("id", { count: "exact" }).eq("distributor_id", user.id),
-        supabase.from("app_users").select("id", { count: "exact" }).eq("distributor_id", user.id),
-        supabase.from("branding").select("id").eq("distributor_id", user.id).single(),
+      const [easRes, usersRes, licRes, brandRes] = await Promise.all([
+        supabase.from("eas").select("id", { count: "exact", head: true }).eq("distributor_id", user.id),
+        supabase.from("app_users").select("id", { count: "exact", head: true }).eq("distributor_id", user.id),
+        supabase.from("app_users").select("id", { count: "exact", head: true }).eq("distributor_id", user.id).not("license_sent_at", "is", null),
+        supabase.from("branding").select("id").eq("distributor_id", user.id).maybeSingle(),
       ]);
 
       setStats({
         eas: easRes.count || 0,
         users: usersRes.count || 0,
+        licenses: licRes.count || 0,
         hasBranding: !!brandRes.data,
       });
       setLoading(false);
@@ -76,9 +78,10 @@ export default function DashboardOverview() {
           <div className="bg-white border border-gray-200 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Quick Start</h3>
             <div className="space-y-3">
-              <QuickStep num={1} done={stats.hasBranding} label="Set up your branding" desc="Upload your logo, robot image, and choose your app name & colors" href="/dashboard/branding" />
-              <QuickStep num={2} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
-              <QuickStep num={3} done={stats.users > 0} label="Invite Users" desc="Add user emails so they can access your branded app" href="/dashboard/users" />
+              <QuickStep num={1} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
+              <QuickStep num={2} done={stats.users > 0} label="Invite Users" desc="Add user emails so they can access your branded app" href="/dashboard/users" />
+              <QuickStep num={3} done={stats.licenses > 0} label="Generate License" desc="Issue an access key to a user — it's emailed straight to them" href="/dashboard/licenses" />
+              <QuickStep num={4} done={stats.hasBranding} label="Set up your branding" desc="Upload your logo, robot image, and choose your app name & colors" href="/dashboard/branding" />
             </div>
           </div>
         </>

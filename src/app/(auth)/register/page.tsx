@@ -32,7 +32,21 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/dashboard");
+    // Don't grant access yet — send a Brevo verification email and make sure
+    // no lingering session lets them into the dashboard before verifying.
+    const normalizedEmail = email.trim().toLowerCase();
+    try {
+      await fetch("/api/v1/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+    } catch {
+      // Non-fatal: user can resend from the pending page.
+    }
+    await supabase.auth.signOut();
+
+    router.push(`/pending?email=${encodeURIComponent(normalizedEmail)}`);
   };
 
   return (

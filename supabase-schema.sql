@@ -6,8 +6,15 @@ create table public.distributors (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
   name text not null,
+  verified boolean not null default false,
+  verification_token uuid default gen_random_uuid(),
+  verified_at timestamptz,
+  onboarded boolean not null default false,
   created_at timestamptz default now()
 );
+
+create index distributors_verification_token_idx
+  on public.distributors (verification_token);
 
 alter table public.distributors enable row level security;
 
@@ -73,10 +80,16 @@ create table public.app_users (
   ea_id uuid not null references public.eas(id) on delete cascade,
   email text not null,
   is_active boolean default true,
+  license_key text,
+  license_sent_at timestamptz,
   created_at timestamptz default now(),
   last_seen timestamptz,
   unique(ea_id, email)
 );
+
+create unique index app_users_license_key_idx
+  on public.app_users (license_key)
+  where license_key is not null;
 
 alter table public.app_users enable row level security;
 

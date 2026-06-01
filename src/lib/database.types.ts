@@ -6,18 +6,28 @@ export interface Database {
           id: string;
           email: string;
           name: string;
+          verified: boolean;
+          verification_token: string | null;
+          verified_at: string | null;
+          onboarded: boolean;
           created_at: string;
         };
         Insert: {
           id?: string;
           email: string;
           name: string;
+          verified?: boolean;
+          onboarded?: boolean;
           created_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
           name?: string;
+          verified?: boolean;
+          verified_at?: string | null;
+          verification_token?: string | null;
+          onboarded?: boolean;
         };
       };
       branding: {
@@ -84,6 +94,8 @@ export interface Database {
           ea_id: string;
           email: string;
           is_active: boolean;
+          license_key: string | null;
+          license_sent_at: string | null;
           created_at: string;
           last_seen: string | null;
         };

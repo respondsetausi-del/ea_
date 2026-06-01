@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import Link from "next/link";
-import { LayoutDashboard, Bot, Palette, Users, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Bot, Palette, Users, KeyRound, LogOut, Menu, X } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/eas", label: "Trading Bots", icon: Bot },
-  { href: "/dashboard/branding", label: "Branding", icon: Palette },
   { href: "/dashboard/users", label: "Users", icon: Users },
+  { href: "/dashboard/licenses", label: "Generate License", icon: KeyRound },
+  { href: "/dashboard/branding", label: "Branding", icon: Palette },
 ];
+
+const DEV_ONBOARDED_KEY = "dev_onboarded";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -22,16 +25,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (DEV_MODE) {
       setUser({ email: DEV_USER.email, name: DEV_USER.user_metadata.name });
+      // First-login guided setup (simulated locally via localStorage).
+      const onboarded = typeof window !== "undefined" && localStorage.getItem(DEV_ONBOARDED_KEY) === "true";
+      if (!onboarded && pathname !== "/dashboard/start") {
+        router.push("/dashboard/start");
+      }
       return;
     }
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
         router.push("/login");
         return;
       }
+
+      // Block access until the distributor has verified their email.
+      const { data: distributor } = await supabase
+        .from("distributors")
+        .select("verified, onboarded")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (!distributor?.verified) {
+        await supabase.auth.signOut();
+        router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
+        return;
+      }
+
+      // First-time distributors get walked through setup in sequence.
+      if (!distributor.onboarded && pathname !== "/dashboard/start") {
+        router.push("/dashboard/start");
+        return;
+      }
+
       setUser({ email: data.user.email, name: data.user.user_metadata?.name });
     });
-  }, [router]);
+  }, [router, pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

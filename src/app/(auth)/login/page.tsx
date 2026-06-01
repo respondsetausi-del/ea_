@@ -24,12 +24,27 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(DEV_MODE ? "Use test@freerobot.app / king" : error.message);
       setLoading(false);
       return;
     }
+
+    // Gate: only verified/approved distributors may enter the dashboard.
+    const { data: distributor } = await supabase
+      .from("distributors")
+      .select("verified")
+      .eq("id", data.user?.id)
+      .maybeSingle();
+
+    if (!distributor?.verified) {
+      await supabase.auth.signOut();
+      setError("Please verify your email before signing in. Check your inbox for the verification link.");
+      setLoading(false);
+      return;
+    }
+
     router.push("/dashboard");
   };
 
