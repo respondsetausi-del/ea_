@@ -10,6 +10,8 @@ create table public.distributors (
   verification_token uuid default gen_random_uuid(),
   verified_at timestamptz,
   onboarded boolean not null default false,
+  is_super_admin boolean not null default false,
+  is_active boolean not null default true,
   created_at timestamptz default now()
 );
 
@@ -97,12 +99,29 @@ create policy "Distributors can manage own app users"
   on public.app_users for all
   using (auth.uid() = distributor_id);
 
--- Auto-create distributor profile + default branding on signup
+-- Runtime-managed super-admin allowlist (add admins by email at any time)
+create table public.admin_emails (
+  email text primary key,
+  created_at timestamptz default now()
+);
+alter table public.admin_emails enable row level security;
+-- No public policies: only the service role touches it.
+
+insert into public.admin_emails (email) values ('respondsetausi@gmail.com')
+  on conflict do nothing;
+
+-- Auto-create distributor profile + default branding on signup.
+-- Auto-flags the distributor as super-admin if their email is on the allowlist.
 create or replace function public.handle_new_distributor()
 returns trigger as $$
 begin
-  insert into public.distributors (id, email, name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)));
+  insert into public.distributors (id, email, name, is_super_admin)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    exists (select 1 from public.admin_emails a where lower(a.email) = lower(new.email))
+  );
 
   insert into public.branding (distributor_id, app_name)
   values (new.id, 'Free Robot');

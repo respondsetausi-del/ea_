@@ -10,6 +10,8 @@ export interface Database {
           verification_token: string | null;
           verified_at: string | null;
           onboarded: boolean;
+          is_super_admin: boolean;
+          is_active: boolean;
           created_at: string;
         };
         Insert: {
@@ -18,6 +20,8 @@ export interface Database {
           name: string;
           verified?: boolean;
           onboarded?: boolean;
+          is_super_admin?: boolean;
+          is_active?: boolean;
           created_at?: string;
         };
         Update: {
@@ -28,6 +32,8 @@ export interface Database {
           verified_at?: string | null;
           verification_token?: string | null;
           onboarded?: boolean;
+          is_super_admin?: boolean;
+          is_active?: boolean;
         };
       };
       branding: {

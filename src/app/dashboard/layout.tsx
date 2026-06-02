@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import Link from "next/link";
-import { LayoutDashboard, Bot, Palette, Users, KeyRound, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Bot, Palette, Users, KeyRound, Crown, LogOut, Menu, X } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -14,17 +14,21 @@ const NAV = [
   { href: "/dashboard/branding", label: "Branding", icon: Palette },
 ];
 
+const ADMIN_NAV = { href: "/dashboard/admin", label: "Super Admin", icon: Crown };
+
 const DEV_ONBOARDED_KEY = "dev_onboarded";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (DEV_MODE) {
       setUser({ email: DEV_USER.email, name: DEV_USER.user_metadata.name });
+      setIsSuperAdmin(true); // demo: show the admin area locally
       // First-login guided setup (simulated locally via localStorage).
       const onboarded = typeof window !== "undefined" && localStorage.getItem(DEV_ONBOARDED_KEY) === "true";
       if (!onboarded && pathname !== "/dashboard/start") {
@@ -41,13 +45,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // Block access until the distributor has verified their email.
       const { data: distributor } = await supabase
         .from("distributors")
-        .select("verified, onboarded")
+        .select("verified, onboarded, is_active")
         .eq("id", data.user.id)
         .maybeSingle();
 
       if (!distributor?.verified) {
         await supabase.auth.signOut();
         router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
+        return;
+      }
+
+      // Suspended distributors are locked out entirely.
+      if (distributor.is_active === false) {
+        await supabase.auth.signOut();
+        router.push("/login?suspended=1");
         return;
       }
 
@@ -58,6 +69,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
 
       setUser({ email: data.user.email, name: data.user.user_metadata?.name });
+
+      // Determine super-admin status for nav gating (best-effort).
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (token) {
+          const res = await fetch("/api/admin/me", { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) setIsSuperAdmin(!!(await res.json()).isSuperAdmin);
+        }
+      } catch { /* nav gating is non-critical */ }
     });
   }, [router, pathname]);
 
@@ -73,6 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  const nav = isSuperAdmin ? [...NAV, ADMIN_NAV] : NAV;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -95,13 +118,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 mt-2">
-          {NAV.map(item => {
+          {nav.map(item => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            const admin = item.href === ADMIN_NAV.href;
             return (
               <Link key={item.href} href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${active ? "bg-gray-900 text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${active ? "bg-gray-900 text-white" : admin ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}>
                 <Icon size={18} />
                 {item.label}
               </Link>
@@ -129,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu size={20} />
           </button>
           <h1 className="text-sm font-bold text-gray-700 tracking-wide">
-            {NAV.find(n => n.href === pathname)?.label || "Dashboard"}
+            {nav.find(n => n.href === pathname)?.label || "Dashboard"}
           </h1>
         </header>
         <div className="flex-1 p-4 sm:p-6 overflow-auto">
