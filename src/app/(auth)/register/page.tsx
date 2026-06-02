@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { APPROVAL_MODE } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
@@ -32,17 +33,20 @@ export default function RegisterPage() {
       return;
     }
 
-    // Don't grant access yet — send a Brevo verification email and make sure
-    // no lingering session lets them into the dashboard before verifying.
+    // Don't grant access yet. In approval mode an admin approves the account;
+    // in email mode we send a Brevo verification link. Either way, make sure no
+    // lingering session lets them into the dashboard before they're approved.
     const normalizedEmail = email.trim().toLowerCase();
-    try {
-      await fetch("/api/v1/send-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
-      });
-    } catch {
-      // Non-fatal: user can resend from the pending page.
+    if (!APPROVAL_MODE) {
+      try {
+        await fetch("/api/v1/send-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail }),
+        });
+      } catch {
+        // Non-fatal: user can resend from the pending page.
+      }
     }
     await supabase.auth.signOut();
 

@@ -267,13 +267,13 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-bold text-gray-900 truncate">{d.name}</p>
                   {d.isSuperAdmin && <Tag color="amber">ADMIN</Tag>}
-                  {d.verified ? <Tag color="green">VERIFIED</Tag> : <Tag color="gray">UNVERIFIED</Tag>}
+                  {d.verified ? <Tag color="green">APPROVED</Tag> : <Tag color="amber">PENDING</Tag>}
                   {!d.isActive && <Tag color="red">SUSPENDED</Tag>}
                 </div>
                 <p className="text-[11px] text-gray-400 truncate">{d.email} · {d.eaCount} bots · {d.userCount} users · {d.licensesSent} licenses</p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                {!d.verified && <ActionBtn busy={isBusy(d.id, "verify")} onClick={() => act("distributor", d.id, "verify")} icon={BadgeCheck} title="Force-verify" />}
+                {!d.verified && <ActionBtn busy={isBusy(d.id, "verify")} onClick={() => act("distributor", d.id, "verify")} icon={BadgeCheck} title="Approve account" />}
                 {d.isActive
                   ? <ActionBtn busy={isBusy(d.id, "suspend")} onClick={() => act("distributor", d.id, "suspend", `Suspend ${d.name}? They won't be able to log in.`)} icon={Ban} title="Suspend" danger />
                   : <ActionBtn busy={isBusy(d.id, "activate")} onClick={() => act("distributor", d.id, "activate")} icon={Power} title="Reactivate" />}
