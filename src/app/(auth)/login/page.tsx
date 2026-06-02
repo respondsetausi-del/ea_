@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
+import { isSuperAdminNow } from "@/lib/admin-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn, Eye, EyeOff } from "lucide-react";
@@ -32,13 +33,21 @@ export default function LoginPage() {
     }
 
     // Gate: only verified/approved distributors may enter the dashboard.
+    // Super-admins always bypass verification.
     const { data: distributor } = await supabase
       .from("distributors")
-      .select("verified")
+      .select("verified, is_active")
       .eq("id", data.user?.id)
       .maybeSingle();
 
-    if (!distributor?.verified) {
+    if (distributor?.is_active === false) {
+      await supabase.auth.signOut();
+      setError("This account has been suspended. Contact an administrator.");
+      setLoading(false);
+      return;
+    }
+
+    if (!distributor?.verified && !(await isSuperAdminNow(data.user?.email))) {
       await supabase.auth.signOut();
       setError("Please verify your email before signing in. Check your inbox for the verification link.");
       setLoading(false);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
+import { isSuperAdminNow } from "@/lib/admin-client";
 import Link from "next/link";
 import { LayoutDashboard, Bot, Palette, Users, KeyRound, Crown, LogOut, Menu, X } from "lucide-react";
 
@@ -49,36 +50,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .eq("id", data.user.id)
         .maybeSingle();
 
-      if (!distributor?.verified) {
-        await supabase.auth.signOut();
-        router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
-        return;
-      }
-
       // Suspended distributors are locked out entirely.
-      if (distributor.is_active === false) {
+      if (distributor?.is_active === false) {
         await supabase.auth.signOut();
         router.push("/login?suspended=1");
         return;
       }
 
+      // Super-admins always bypass the verification gate.
+      const superAdmin = await isSuperAdminNow(data.user.email);
+
+      if (!distributor?.verified && !superAdmin) {
+        await supabase.auth.signOut();
+        router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
+        return;
+      }
+
       // First-time distributors get walked through setup in sequence.
-      if (!distributor.onboarded && pathname !== "/dashboard/start") {
+      if (!distributor?.onboarded && pathname !== "/dashboard/start") {
         router.push("/dashboard/start");
         return;
       }
 
       setUser({ email: data.user.email, name: data.user.user_metadata?.name });
-
-      // Determine super-admin status for nav gating (best-effort).
-      try {
-        const { data: sess } = await supabase.auth.getSession();
-        const token = sess.session?.access_token;
-        if (token) {
-          const res = await fetch("/api/admin/me", { headers: { Authorization: `Bearer ${token}` } });
-          if (res.ok) setIsSuperAdmin(!!(await res.json()).isSuperAdmin);
-        }
-      } catch { /* nav gating is non-critical */ }
+      setIsSuperAdmin(superAdmin); // reuse the check above for nav gating
     });
   }, [router, pathname]);
 
