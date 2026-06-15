@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { KeyRound, MailCheck, Send, Loader2 } from "lucide-react";
+import { KeyRound, MailCheck, Send, Loader2, Copy, Check } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
 type Row = AppUser & { ea_name?: string };
@@ -12,6 +12,7 @@ export default function LicensesPage() {
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const load = async () => {
     if (DEV_MODE) {
@@ -36,11 +37,16 @@ export default function LicensesPage() {
 
   useEffect(() => { load(); }, []);
 
+  const copyKey = async (id: string, key: string) => {
+    await navigator.clipboard.writeText(key);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const generate = async (u: Row) => {
     setSendingId(u.id);
     setNotice(null);
 
-    // DEV_MODE: simulate issuing + emailing without a backend.
     if (DEV_MODE) {
       await new Promise(r => setTimeout(r, 600));
       setUsers(prev => prev.map(x => x.id === u.id ? { ...x, license_key: "FR-XXXXX-XXXXX-XXXXX", license_sent_at: new Date().toISOString(), is_active: true } : x));
@@ -80,7 +86,7 @@ export default function LicensesPage() {
       <div>
         <h2 className="text-xl font-black tracking-wide text-gray-900">Generate License</h2>
         <p className="text-gray-500 text-sm mt-1">
-          Issue an access key to an invited user. The key is emailed directly to them — it&apos;s never shown here or in a link.
+          Issue an access key to an invited user. You can copy the key below or email it directly.
         </p>
       </div>
 
@@ -96,34 +102,51 @@ export default function LicensesPage() {
         <div className="space-y-2">
           {users.map(u => {
             const sent = !!u.license_sent_at;
+            const hasKey = !!u.license_key;
             const busy = sendingId === u.id;
             return (
-              <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${sent ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
-                  {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
+              <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sent ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                    {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{u.email}</p>
+                    <p className="text-[10px] text-gray-400">
+                      {u.ea_name || "Unknown bot"}
+                      {sent && <> · Key sent {new Date(u.license_sent_at as string).toLocaleDateString()}</>}
+                    </p>
+                    {notice?.id === u.id && (
+                      <p className={`text-[11px] mt-1 ${notice.ok ? "text-green-600" : "text-amber-600"}`}>{notice.msg}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => generate(u)}
+                    disabled={busy}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50 ${
+                      sent
+                        ? "border border-gray-300 text-gray-600 hover:border-gray-900"
+                        : "bg-gray-900 text-white hover:bg-gray-800"
+                    }`}
+                  >
+                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                    {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{u.email}</p>
-                  <p className="text-[10px] text-gray-400">
-                    {u.ea_name || "Unknown bot"}
-                    {sent && <> · Key sent {new Date(u.license_sent_at as string).toLocaleDateString()}</>}
-                  </p>
-                  {notice?.id === u.id && (
-                    <p className={`text-[11px] mt-1 ${notice.ok ? "text-green-600" : "text-amber-600"}`}>{notice.msg}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => generate(u)}
-                  disabled={busy}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 ${
-                    sent
-                      ? "border border-gray-300 text-gray-600 hover:border-gray-900"
-                      : "bg-gray-900 text-white hover:bg-gray-800"
-                  }`}
-                >
-                  {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                  {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
-                </button>
+                {hasKey && (
+                  <div className="mt-3 ml-13 flex items-center gap-2">
+                    <code className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono text-gray-700 tracking-wide select-all">
+                      {u.license_key}
+                    </code>
+                    <button
+                      onClick={() => copyKey(u.id, u.license_key!)}
+                      className="shrink-0 p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 transition"
+                      title="Copy key"
+                    >
+                      {copiedId === u.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
