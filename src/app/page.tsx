@@ -1,536 +1,493 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Download,
   Zap,
-  ShieldCheck,
-  Clock,
-  Trophy,
-  Newspaper,
-  Lock,
-  Headphones,
+  Shield,
+  Bell,
   Globe,
-  ChevronDown,
-  Users,
-  CheckCircle,
   Smartphone,
-  MonitorSmartphone,
+  TrendingUp,
+  Clock,
+  ChevronDown,
+  PlayCircle,
 } from "lucide-react";
 
-function NavBar() {
+const ACCENT = "#3DE05C";
+
+export default function Home() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/5">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full border border-emerald-400/40 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-            <span className="text-xs font-black text-emerald-400">FR</span>
+    <div className="min-h-screen text-white overflow-x-hidden" style={{ background: "#0D1117" }}>
+      {/* Nav */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 border-b px-6 py-3"
+        style={{
+          background: "rgba(13,17,23,0.88)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderColor: "rgba(61,224,92,0.15)",
+        }}
+      >
+        <div className="max-w-[1100px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+              style={{ background: "rgba(61,224,92,0.15)", color: ACCENT }}
+            >
+              EA
+            </div>
+            <span className="text-xl font-extrabold tracking-wide">
+              EA <span style={{ color: ACCENT }}>ACCESS</span>
+            </span>
           </div>
-          <span className="text-sm font-bold tracking-widest">FREE ROBOT</span>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/login"
+              className="px-[18px] py-2 rounded-xl text-[13px] font-bold border transition-colors"
+              style={{
+                color: ACCENT,
+                borderColor: "rgba(61,224,92,0.25)",
+                background: "rgba(61,224,92,0.08)",
+              }}
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/register"
+              className="px-5 py-2 rounded-xl text-[13px] font-extrabold text-black transition-all"
+              style={{
+                background: ACCENT,
+                boxShadow: `0 4px 16px 0px rgba(61,224,92,0.3)`,
+              }}
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="px-5 py-2 text-xs font-semibold text-zinc-400 hover:text-white transition"
-          >
-            Sign In
-          </Link>
+      </nav>
+
+      {/* Hero */}
+      <section
+        className="pt-[140px] pb-20 px-6 flex flex-col items-center"
+        style={{
+          background:
+            "radial-gradient(ellipse at top, rgba(61,224,92,0.08) 0%, transparent 60%)",
+        }}
+      >
+        <div
+          className="px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-[2px] mb-5 border"
+          style={{
+            color: ACCENT,
+            background: "rgba(61,224,92,0.12)",
+            borderColor: "rgba(61,224,92,0.25)",
+          }}
+        >
+          100% FREE
+        </div>
+        <h1 className="text-[42px] sm:text-[52px] font-black text-center leading-[1.15] tracking-tight mb-5">
+          Mobile EA{"\n"}
+          <br className="sm:hidden" />
+          Trading <span style={{ color: ACCENT }}>Automation</span>
+        </h1>
+        <p
+          className="text-[17px] text-center leading-[27px] max-w-[560px] mb-9"
+          style={{ color: "#8B949E" }}
+        >
+          Run your Expert Advisors directly from your phone. Connect your MT5
+          account, receive real-time trading signals, and execute trades
+          automatically — no VPS required.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-3.5 mb-12">
           <Link
             href="/register"
-            className="px-5 py-2 rounded-lg bg-emerald-500 text-black text-xs font-bold hover:bg-emerald-400 transition"
+            className="flex items-center gap-2 px-7 py-3.5 rounded-[14px] text-[15px] font-extrabold text-black transition-all"
+            style={{
+              background: ACCENT,
+              boxShadow: "0 4px 20px 0px rgba(61,224,92,0.4)",
+            }}
           >
-            Get Started
+            <Zap size={18} />
+            Start Trading Free
+          </Link>
+          <Link
+            href="/login"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
+            style={{
+              color: ACCENT,
+              borderColor: "rgba(61,224,92,0.3)",
+              background: "rgba(61,224,92,0.06)",
+            }}
+          >
+            <PlayCircle size={18} />
+            See How It Works
           </Link>
         </div>
-      </div>
-    </nav>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="relative pt-32 sm:pt-40 pb-20 px-6">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.1)_0%,transparent_60%)] pointer-events-none" />
-      <div className="max-w-6xl mx-auto relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-5 leading-tight">
-              Mobile EA
-              <br />
-              <span className="text-emerald-400">Trading Automation</span>
-            </h1>
-            <p className="text-zinc-400 text-lg max-w-xl mb-8 leading-relaxed mx-auto lg:mx-0">
-              Run your Expert Advisors on your phone. Free tools, zero latency,
-              24/7 uptime. No VPS needed — trade from anywhere.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a
-                href="https://free-app-zw10.onrender.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group px-8 py-4 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wide hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2"
-              >
-                <Download size={18} />
-                Download Now
-                <ArrowRight
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </a>
-              <Link
-                href="/register"
-                className="px-8 py-4 rounded-2xl border border-zinc-700 text-white font-bold text-sm tracking-wide hover:border-emerald-400/40 hover:text-emerald-400 transition-all flex items-center justify-center gap-2"
-              >
-                <Users size={18} />
-                Become a Hoster
-              </Link>
+        {/* Stats bar */}
+        <div
+          className="flex items-center gap-6 px-[30px] py-[18px] rounded-2xl border"
+          style={{
+            background: "rgba(22,27,34,0.8)",
+            borderColor: "rgba(61,224,92,0.1)",
+          }}
+        >
+          <div className="text-center">
+            <div className="text-[22px] font-black" style={{ color: ACCENT }}>
+              4.8/5
             </div>
-            <p className="text-zinc-500 text-sm mt-6">
-              <strong className="text-zinc-300">100% EA execution guarantee</strong>{" "}
-              &bull; 4.8/5 from 337+ reviews
-            </p>
+            <div
+              className="text-[11px] font-semibold tracking-wide mt-0.5"
+              style={{ color: "#8B949E" }}
+            >
+              User Rating
+            </div>
           </div>
-          <div className="flex justify-center">
-            <div className="relative w-72 sm:w-80 aspect-[9/16] rounded-3xl border-2 border-emerald-400/30 bg-zinc-950 overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.15)]">
-              <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-emerald-500/5" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                  <Smartphone size={32} className="text-emerald-400" />
-                </div>
-                <span className="text-emerald-400 font-bold text-lg">
-                  Free Robot
-                </span>
-                <span className="text-zinc-500 text-xs text-center">
-                  Your mobile trading terminal
-                </span>
-                <div className="flex gap-3 mt-2">
-                  <div className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
-                    MT4
-                  </div>
-                  <div className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
-                    MT5
-                  </div>
-                  <div className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
-                    24/7
-                  </div>
-                </div>
-              </div>
+          <div
+            className="w-px h-[30px]"
+            style={{ background: "rgba(61,224,92,0.15)" }}
+          />
+          <div className="text-center">
+            <div className="text-[22px] font-black" style={{ color: ACCENT }}>
+              1ms
+            </div>
+            <div
+              className="text-[11px] font-semibold tracking-wide mt-0.5"
+              style={{ color: "#8B949E" }}
+            >
+              Latency
+            </div>
+          </div>
+          <div
+            className="w-px h-[30px]"
+            style={{ background: "rgba(61,224,92,0.15)" }}
+          />
+          <div className="text-center">
+            <div className="text-[22px] font-black" style={{ color: ACCENT }}>
+              24/7
+            </div>
+            <div
+              className="text-[11px] font-semibold tracking-wide mt-0.5"
+              style={{ color: "#8B949E" }}
+            >
+              Uptime
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function FeaturesSection() {
-  const features = [
-    {
-      icon: Zap,
-      title: "Low Latency",
-      desc: "Execute trades with minimal delay, as low as 1ms, for precise market entry.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "Secure & Encrypted",
-      desc: "Advanced cybersecurity protects your trading data from threats.",
-    },
-    {
-      icon: Clock,
-      title: "24/7 Uptime",
-      desc: "Keep your EAs running continuously with our reliable infrastructure.",
-    },
-  ];
-  return (
-    <section className="py-20 px-6 bg-zinc-950/50">
-      <div className="max-w-5xl mx-auto">
-        <p className="text-emerald-400 text-xs font-bold tracking-[0.3em] text-center mb-3">
-          WHY CHOOSE FREE ROBOT
+      {/* Features */}
+      <section
+        className="py-20 px-6 flex flex-col items-center"
+        style={{ background: "#0A0D12" }}
+      >
+        <p
+          className="text-[11px] font-extrabold tracking-[3px] mb-3"
+          style={{ color: ACCENT }}
+        >
+          FEATURES
         </p>
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-14">
-          Built for Serious Traders
+        <h2 className="text-[32px] font-black text-center mb-12 tracking-tight">
+          Why Traders Choose EA Access
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {features.map((f) => (
-            <div key={f.title} className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-5">
-                <f.icon size={28} className="text-emerald-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-[1000px] w-full">
+          {[
+            {
+              icon: Zap,
+              title: "Fast Execution",
+              desc: "Execute trades with ultra-low latency directly from your mobile device. No delays, no missed opportunities.",
+            },
+            {
+              icon: Shield,
+              title: "Secure & Encrypted",
+              desc: "Your trading credentials and data are encrypted end-to-end. We never store your MT5 passwords on our servers.",
+            },
+            {
+              icon: Bell,
+              title: "Real-Time Signals",
+              desc: "Receive instant trading signals from your connected EAs. One-tap execution or fully automated trading.",
+            },
+          ].map((f) => (
+            <div
+              key={f.title}
+              className="rounded-[18px] p-7 border"
+              style={{
+                background: "#161B22",
+                borderColor: "rgba(61,224,92,0.08)",
+                boxShadow: "0 4px 20px 0px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div
+                className="w-12 h-12 rounded-[14px] flex items-center justify-center mb-[18px]"
+                style={{ background: "rgba(61,224,92,0.1)" }}
+              >
+                <f.icon size={24} style={{ color: ACCENT }} />
               </div>
-              <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed">{f.desc}</p>
+              <h3 className="text-[18px] font-extrabold mb-2.5">{f.title}</h3>
+              <p className="text-[14px] leading-[22px]" style={{ color: "#8B949E" }}>
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function HappyTradersSection() {
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
-          <Trophy size={28} className="text-amber-400" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          Years of Happy Traders
+      {/* How It Works */}
+      <section className="py-20 px-6 flex flex-col items-center">
+        <p
+          className="text-[11px] font-extrabold tracking-[3px] mb-3"
+          style={{ color: ACCENT }}
+        >
+          HOW IT WORKS
+        </p>
+        <h2 className="text-[32px] font-black text-center mb-12 tracking-tight">
+          Up and Running in Minutes
         </h2>
-        <p className="text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Since our launch, Free Robot has empowered thousands of traders with
-          reliable mobile automation. Trusted by the trading community and
-          recognized for innovation and commitment to excellence.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function PlatformFreezeSection() {
-  return (
-    <section className="py-20 px-6 bg-zinc-950/50">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6">
-          <Newspaper size={28} className="text-rose-400" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          No More Freezes on News
-        </h2>
-        <p className="text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          High-impact news like non-farm payroll reports can freeze your trading
-          platform, costing you profits. Free Robot reserves a resource buffer to
-          prevent freezes, ensuring your EAs stay active during volatile market
-          conditions.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function CybersecuritySection() {
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-6">
-          <Lock size={28} className="text-cyan-400" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          Cutting-Edge Cybersecurity
-        </h2>
-        <p className="text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Real-time monitoring and anti-DDoS solutions protect your mobile EA
-          hosting from volumetric and protocol-based attacks, keeping your
-          trading data secure around the clock.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function SupportSection() {
-  return (
-    <section className="py-20 px-6 bg-zinc-950/50">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-6">
-          <Headphones size={28} className="text-violet-400" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          We&apos;re Here For You 24/7
-        </h2>
-        <p className="text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Our dedicated support team is available around the clock to assist with
-          any issues. Get help setting up your EAs, troubleshooting, or
-          optimizing your trading workflow.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorksSection() {
-  const steps = [
-    { num: "1", title: "Download Free Robot", desc: "Get the app on your Android or iOS device." },
-    { num: "2", title: "Get Your License Key", desc: "Register and receive your free access key." },
-    { num: "3", title: "Connect & Auto-Trade", desc: "Link your MT4/MT5 account and start trading." },
-  ];
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        <p className="text-emerald-400 text-xs font-bold tracking-[0.3em] text-center mb-3">
-          GET STARTED
-        </p>
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-4">
-          How to Setup Your Mobile Bot
-        </h2>
-        <p className="text-zinc-500 text-center max-w-xl mx-auto mb-14">
-          Your personal mobile VPS — run Expert Advisors 24/7 right from your
-          phone, no desktop VPS needed.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {steps.map((s) => (
-            <div
-              key={s.num}
-              className="relative bg-zinc-950 border border-zinc-800/80 rounded-2xl p-7 text-center hover:border-emerald-500/30 transition-all"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-500 text-black font-black text-lg flex items-center justify-center mx-auto mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-[900px] w-full">
+          {[
+            {
+              num: "1",
+              title: "Get Your Access Key",
+              desc: "Sign up with your email and enter your EA access key to activate your account.",
+            },
+            {
+              num: "2",
+              title: "Connect Your MT5",
+              desc: "Link your MetaTrader 5 broker account securely. We support all major brokers worldwide.",
+            },
+            {
+              num: "3",
+              title: "Start Auto Trading",
+              desc: "Configure your trading parameters and let your EA execute trades automatically from your phone.",
+            },
+          ].map((s) => (
+            <div key={s.num} className="flex flex-col items-center text-center">
+              <div
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center mb-[18px] text-[22px] font-black text-black"
+                style={{
+                  background: ACCENT,
+                  boxShadow: "0 4px 16px 0px rgba(61,224,92,0.25)",
+                }}
+              >
                 {s.num}
               </div>
-              <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed">{s.desc}</p>
+              <h3 className="text-[17px] font-extrabold mb-2">{s.title}</h3>
+              <p
+                className="text-[14px] leading-[22px] max-w-[260px]"
+                style={{ color: "#8B949E" }}
+              >
+                {s.desc}
+              </p>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap justify-center gap-4 mt-10">
-          {["Accurate Execution", "Ultra Low 1ms Latency", "MT4/MT5 Supported", "Unlimited Access"].map((f) => (
-            <span
-              key={f}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 font-semibold"
-            >
-              <CheckCircle size={14} className="text-emerald-400" />
-              {f}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function WorldwideSection() {
-  return (
-    <section className="py-20 px-6 bg-zinc-950/50">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-          <Globe size={28} className="text-emerald-400" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          Active Worldwide
-        </h2>
-        <p className="text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Connected across 900+ global points, ensuring low-latency trading
-          worldwide. No matter where you are, Free Robot keeps you connected.
+      {/* Reliability / Trust */}
+      <section
+        className="py-20 px-6 flex flex-col items-center"
+        style={{ background: "#0A0D12" }}
+      >
+        <p
+          className="text-[11px] font-extrabold tracking-[3px] mb-3"
+          style={{ color: ACCENT }}
+        >
+          RELIABILITY
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto">
+        <h2 className="text-[32px] font-black text-center mb-12 tracking-tight">
+          Built for Serious Traders
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[800px] w-full">
           {[
-            { label: "Countries", value: "50+" },
-            { label: "Traders", value: "5K+" },
-            { label: "Uptime", value: "99.9%" },
-            { label: "Latency", value: "<1ms" },
-          ].map((s) => (
+            {
+              icon: Globe,
+              title: "Works Worldwide",
+              desc: "Connected across global trading servers for low-latency execution anywhere.",
+            },
+            {
+              icon: Smartphone,
+              title: "No VPS Needed",
+              desc: "Your phone becomes your trading server. No desktop, no VPS rental fees.",
+            },
+            {
+              icon: TrendingUp,
+              title: "MT4 & MT5 Support",
+              desc: "Compatible with both MetaTrader 4 and MetaTrader 5 platforms and all brokers.",
+            },
+            {
+              icon: Clock,
+              title: "Always Running",
+              desc: "Your EAs keep executing even when the app is in the background or your screen is off.",
+            },
+          ].map((item) => (
             <div
-              key={s.label}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center"
+              key={item.title}
+              className="flex items-start gap-3.5 p-5 rounded-[14px] border"
+              style={{
+                background: "#161B22",
+                borderColor: "rgba(61,224,92,0.06)",
+              }}
             >
-              <div className="text-2xl font-black text-emerald-400">
-                {s.value}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "rgba(61,224,92,0.1)" }}
+              >
+                <item.icon size={20} style={{ color: ACCENT }} />
               </div>
-              <div className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase mt-1">
-                {s.label}
+              <div>
+                <h3 className="text-[15px] font-extrabold mb-1">{item.title}</h3>
+                <p className="text-[13px] leading-5" style={{ color: "#8B949E" }}>
+                  {item.desc}
+                </p>
               </div>
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function FAQSection() {
-  const faqs = [
-    {
-      q: "How does a mobile trading bot work?",
-      a: "Free Robot converts your Expert Advisors into mobile-compatible bots. Our infrastructure runs them 24/7 on cloud servers accessible from your phone — no desktop VPS needed.",
-    },
-    {
-      q: "Is Free Robot actually free?",
-      a: "Yes. The core platform is completely free. Download the app, get your license key, and start trading with zero upfront cost.",
-    },
-    {
-      q: "Which platforms are supported?",
-      a: "Free Robot supports both MetaTrader 4 and MetaTrader 5. Connect any MT4/MT5 broker account and run your EAs seamlessly.",
-    },
-    {
-      q: "Do I need a VPS?",
-      a: "No. Free Robot replaces the need for a traditional VPS. Your phone acts as the control panel while our servers handle the execution 24/7.",
-    },
-  ];
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-12">
-          Have Some Questions?
+      {/* FAQ */}
+      <section className="py-20 px-6 flex flex-col items-center">
+        <p
+          className="text-[11px] font-extrabold tracking-[3px] mb-3"
+          style={{ color: ACCENT }}
+        >
+          FAQ
+        </p>
+        <h2 className="text-[32px] font-black text-center mb-12 tracking-tight">
+          Common Questions
         </h2>
-        <div className="space-y-3">
-          {faqs.map((faq, i) => (
+        <div className="max-w-[700px] w-full space-y-2.5">
+          {[
+            {
+              q: "How does EA Access work?",
+              a: "EA Access converts your Expert Advisors into mobile-compatible bots. Once you connect your MT5 account, the app communicates directly with your broker to execute trades based on your EA signals — all from your phone.",
+            },
+            {
+              q: "Is my trading account safe?",
+              a: "Yes. Your MT5 credentials are encrypted and used only to establish a direct connection with your broker. We never store passwords on our servers. All trading happens through your broker's official web terminal.",
+            },
+            {
+              q: "Which brokers are supported?",
+              a: "EA Access supports all major MT5 brokers including RazorMarkets, Deriv, RCG Markets, Trade245, and any broker with a web terminal. MT4 support is also available.",
+            },
+            {
+              q: "Do I need a VPS?",
+              a: "No. EA Access eliminates the need for a VPS entirely. Your phone acts as the trading server, executing trades with ultra-low latency directly through the broker's platform.",
+            },
+          ].map((faq, i) => (
             <details
               key={i}
-              className="group bg-zinc-950 border border-zinc-800/80 rounded-xl overflow-hidden"
+              className="group rounded-[14px] border overflow-hidden"
+              style={{
+                background: "#161B22",
+                borderColor: "rgba(61,224,92,0.06)",
+              }}
+              {...(i === 0 ? { open: true } : {})}
             >
-              <summary className="flex items-center justify-between px-6 py-5 cursor-pointer list-none text-sm font-bold hover:text-emerald-400 transition">
+              <summary className="flex items-center justify-between px-5 py-5 cursor-pointer list-none text-[15px] font-bold hover:text-[#3DE05C] transition-colors [&::-webkit-details-marker]:hidden">
                 {faq.q}
                 <ChevronDown
                   size={18}
-                  className="text-zinc-500 group-open:rotate-180 transition-transform shrink-0 ml-4"
+                  className="shrink-0 ml-3 transition-transform group-open:rotate-180"
+                  style={{ color: "#8B949E" }}
                 />
               </summary>
-              <div className="px-6 pb-5 text-zinc-400 text-sm leading-relaxed">
+              <div
+                className="px-5 pb-5 text-[14px] leading-[23px] border-t pt-3.5"
+                style={{
+                  color: "#8B949E",
+                  borderColor: "rgba(255,255,255,0.06)",
+                }}
+              >
                 {faq.a}
               </div>
             </details>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function HostCTASection() {
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl p-10 sm:p-14 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-          <div className="relative">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wider mb-6">
-              AFFILIATE PROGRAM
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black mb-4">
-              Earn With <span className="text-emerald-400">Free Robot</span>
-            </h2>
-            <p className="text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
-              Refer traders to our platform and earn commissions on every
-              subscription. Track your referrals, monitor earnings, and grow your
-              network.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {["Up to 50% Commission", "Crypto Payouts", "Real-Time Dashboard"].map((p) => (
-                <span
-                  key={p}
-                  className="flex items-center gap-2 text-xs text-zinc-300 font-semibold"
-                >
-                  <CheckCircle size={14} className="text-emerald-400" />
-                  {p}
-                </span>
-              ))}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wide hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
-              >
-                Become a Hoster
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-zinc-700 text-white font-bold text-sm tracking-wide hover:border-emerald-400/40 hover:text-emerald-400 transition-all"
-              >
-                Distributor Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DownloadCTA() {
-  return (
-    <section className="py-20 px-6 border-t border-zinc-900">
-      <div className="max-w-3xl mx-auto text-center">
-        <p className="text-emerald-400 text-xs font-bold tracking-[0.3em] mb-3">
-          GET THE APP
-        </p>
-        <h2 className="text-3xl sm:text-4xl font-black mb-4">
-          Start Trading Today
-        </h2>
-        <p className="text-zinc-500 max-w-md mx-auto mb-8">
-          Download Free Robot and access all tools instantly. No credit card, no
-          trial &mdash; free forever.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="https://free-app-zw10.onrender.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wide hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.4)]"
+      {/* CTA */}
+      <section
+        className="py-[60px] px-6 flex justify-center border-y"
+        style={{
+          borderColor: "rgba(61,224,92,0.15)",
+          background:
+            "linear-gradient(135deg, rgba(61,224,92,0.04) 0%, #0D1117 50%, rgba(61,224,92,0.03) 100%)",
+        }}
+      >
+        <div
+          className="max-w-[620px] w-full rounded-3xl p-12 flex flex-col items-center border"
+          style={{
+            background: "rgba(22,27,34,0.8)",
+            borderColor: "rgba(61,224,92,0.12)",
+            backdropFilter: "blur(20px)",
+            boxShadow: "0 4px 40px 0px rgba(61,224,92,0.08)",
+          }}
+        >
+          <p
+            className="text-[10px] font-extrabold tracking-[2px] mb-4"
+            style={{ color: ACCENT }}
           >
-            <Download size={18} />
-            Download Android
-          </a>
-          <a
-            href="https://free-app-zw10.onrender.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl border border-zinc-700 text-white font-bold text-sm tracking-wide hover:border-emerald-400/40 hover:text-emerald-400 transition-all"
+            GET STARTED TODAY
+          </p>
+          <h2 className="text-[30px] font-black text-center leading-[38px] mb-3.5">
+            Ready to Automate
+            <br />
+            Your Trading?
+          </h2>
+          <p
+            className="text-[14px] text-center leading-[23px] max-w-[440px] mb-[30px]"
+            style={{ color: "#8B949E" }}
           >
-            <MonitorSmartphone size={18} />
-            Get iOS / Web
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="py-10 px-6 border-t border-zinc-900">
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full border border-zinc-700 flex items-center justify-center">
-            <span className="text-[8px] font-black text-zinc-500">FR</span>
-          </div>
-          <span className="text-xs text-zinc-600 tracking-wider font-semibold">
-            FREE ROBOT
-          </span>
-        </div>
-        <p className="text-xs text-zinc-700">
-          &copy; {new Date().getFullYear()} Free Robot. All Rights Reserved.
-        </p>
-        <div className="flex items-center gap-6">
-          <Link
-            href="/login"
-            className="text-xs text-zinc-600 hover:text-white transition"
-          >
-            Distributor Login
-          </Link>
+            Join thousands of traders using EA Access to run their Expert
+            Advisors from anywhere. No setup fees, no VPS costs — just seamless
+            mobile trading.
+          </p>
           <Link
             href="/register"
-            className="text-xs text-zinc-600 hover:text-white transition"
+            className="flex items-center gap-2 px-8 py-4 rounded-2xl text-[16px] font-extrabold text-black transition-all"
+            style={{
+              background: ACCENT,
+              boxShadow: "0 4px 24px 0px rgba(61,224,92,0.45)",
+            }}
           >
-            Become a Hoster
+            <ArrowRight size={18} />
+            Get Started Free
           </Link>
-          <a
-            href="https://free-app-zw10.onrender.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-zinc-600 hover:text-white transition"
-          >
-            Download App
-          </a>
         </div>
-      </div>
-    </footer>
-  );
-}
+      </section>
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      <NavBar />
-      <HeroSection />
-      <FeaturesSection />
-      <HappyTradersSection />
-      <PlatformFreezeSection />
-      <CybersecuritySection />
-      <SupportSection />
-      <HowItWorksSection />
-      <WorldwideSection />
-      <FAQSection />
-      <HostCTASection />
-      <DownloadCTA />
-      <Footer />
+      {/* Footer */}
+      <footer
+        className="py-10 px-6 border-t"
+        style={{ borderColor: "rgba(61,224,92,0.08)" }}
+      >
+        <div className="max-w-[1100px] mx-auto flex flex-col items-center">
+          <div className="text-center mb-4">
+            <span className="text-[18px] font-black tracking-wide">
+              EA <span style={{ color: ACCENT }}>ACCESS</span>
+            </span>
+            <p className="text-[12px] mt-1" style={{ color: "#8B949E" }}>
+              Free Mobile EA Trading
+            </p>
+          </div>
+          <div className="flex items-center gap-3 mb-4">
+            <Link
+              href="/login"
+              className="text-[13px] font-semibold transition-colors hover:text-white"
+              style={{ color: "#8B949E" }}
+            >
+              Sign In
+            </Link>
+            <span className="text-[13px] opacity-30" style={{ color: "#8B949E" }}>
+              |
+            </span>
+            <span className="text-[13px] font-semibold" style={{ color: "#8B949E" }}>
+              Terms &amp; Conditions
+            </span>
+          </div>
+          <p className="text-[12px]" style={{ color: "rgba(139,148,158,0.5)" }}>
+            &copy; 2025 EA Access. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
