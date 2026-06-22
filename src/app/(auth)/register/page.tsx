@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
 
+const ACCENT = "#3DE05C";
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -33,9 +35,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Don't grant access yet. In approval mode an admin approves the account;
-    // in email mode we send a Brevo verification link. Either way, make sure no
-    // lingering session lets them into the dashboard before they're approved.
     const normalizedEmail = email.trim().toLowerCase();
     if (!APPROVAL_MODE) {
       try {
@@ -54,73 +53,165 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 bg-black">
+    <div
+      className="flex min-h-screen items-center justify-center px-6"
+      style={{ background: "#0D1117" }}
+    >
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-full border-2 border-white/60 flex items-center justify-center mb-4">
-            <UserPlus className="text-white" size={24} />
-          </div>
-          <h1 className="text-2xl font-black tracking-wider text-white">REGISTER</h1>
-          <p className="text-zinc-500 text-xs mt-1">Create your distributor account</p>
+        {/* Back to home */}
+        <div className="text-center mb-6">
+          <Link
+            href="/"
+            className="text-[18px] font-black tracking-wide inline-block"
+          >
+            EA <span style={{ color: ACCENT }}>ACCESS</span>
+          </Link>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">YOUR NAME</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition"
-              placeholder="John Doe"
-              required
-            />
+        {/* Card */}
+        <div
+          className="rounded-2xl border p-8"
+          style={{
+            background: "#161B22",
+            borderColor: "rgba(61,224,92,0.1)",
+            boxShadow: "0 4px 40px rgba(0,0,0,0.4)",
+          }}
+        >
+          <div className="text-center mb-7">
+            <div
+              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: "rgba(61,224,92,0.1)" }}
+            >
+              <UserPlus size={24} style={{ color: ACCENT }} />
+            </div>
+            <h1 className="text-xl font-black tracking-wider text-white">
+              REGISTER
+            </h1>
+            <p className="text-xs mt-1" style={{ color: "#8B949E" }}>
+              Create your distributor account
+            </p>
           </div>
 
-          <div>
-            <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">EMAIL</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">PASSWORD</label>
-            <div className="relative">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label
+                className="text-[10px] font-bold tracking-widest block mb-2"
+                style={{ color: "#8B949E" }}
+              >
+                YOUR NAME
+              </label>
               <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/50 transition pr-12"
-                placeholder="Min 6 characters"
-                minLength={6}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                style={{
+                  background: "rgba(13,17,23,0.8)",
+                  border: "1px solid rgba(61,224,92,0.1)",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                }
+                placeholder="John Doe"
                 required
               />
-              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
-          </div>
 
-          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+            <div>
+              <label
+                className="text-[10px] font-bold tracking-widest block mb-2"
+                style={{ color: "#8B949E" }}
+              >
+                EMAIL
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                style={{
+                  background: "rgba(13,17,23,0.8)",
+                  border: "1px solid rgba(61,224,92,0.1)",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                }
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-zinc-200 transition disabled:opacity-50"
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
-        </form>
+            <div>
+              <label
+                className="text-[10px] font-bold tracking-widest block mb-2"
+                style={{ color: "#8B949E" }}
+              >
+                PASSWORD
+              </label>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition pr-12"
+                  style={{
+                    background: "rgba(13,17,23,0.8)",
+                    border: "1px solid rgba(61,224,92,0.1)",
+                  }}
+                  onFocus={(e) =>
+                    (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                  }
+                  placeholder="Min 6 characters"
+                  minLength={6}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "#8B949E" }}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
 
-        <p className="text-center text-zinc-500 text-xs mt-6">
+            {error && (
+              <p className="text-red-400 text-xs text-center">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition disabled:opacity-50 text-black"
+              style={{
+                background: ACCENT,
+                boxShadow: "0 4px 16px rgba(61,224,92,0.3)",
+              }}
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs mt-6" style={{ color: "#8B949E" }}>
           Already have an account?{" "}
-          <Link href="/login" className="text-white hover:text-zinc-300">Sign In</Link>
+          <Link
+            href="/login"
+            className="font-semibold hover:opacity-80 transition"
+            style={{ color: ACCENT }}
+          >
+            Sign In
+          </Link>
         </p>
       </div>
     </div>
