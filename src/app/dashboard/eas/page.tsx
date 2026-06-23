@@ -5,6 +5,12 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Plus, Trash2, Power, PowerOff, Copy, Check } from "lucide-react";
 import type { EA } from "@/lib/database.types";
 
+const ACCENT = "#3DE05C";
+const CARD = "#161B22";
+const MUTED = "#8B949E";
+const INPUT_BG = "rgba(13,17,23,0.8)";
+const BORDER = "rgba(61,224,92,0.1)";
+
 export default function EAsPage() {
   const [eas, setEAs] = useState<EA[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,47 +85,61 @@ export default function EAsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black tracking-wide text-gray-900">Trading Bots</h2>
-          <p className="text-gray-500 text-sm mt-1">Create and manage your EAs. Each EA has a unique EA ID for user access.</p>
+          <h2 className="text-xl font-black tracking-wide text-white">Trading Bots</h2>
+          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs. Each EA has a unique EA ID for user access.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition shadow-sm">
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition text-black"
+          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }}
+        >
           <Plus size={16} />
           New EA
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-900">Create New EA</h3>
+        <form onSubmit={handleCreate} className="rounded-2xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+          <h3 className="text-sm font-bold text-white">Create New EA</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">EA NAME</label>
+              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA NAME</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="e.g. Gold Scalper Pro" required />
             </div>
             <div>
-              <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">EA ID</label>
+              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA ID</label>
               <input value={form.license_key} onChange={e => setForm(f => ({ ...f, license_key: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="Unique ID users enter to login" required />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">DESCRIPTION</label>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>DESCRIPTION</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition resize-none h-20"
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition resize-none h-20"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+              onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+              onBlur={e => e.target.style.borderColor = BORDER}
               placeholder="Optional description" />
           </div>
-          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {error && <p className="text-red-400 text-xs">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50">
+              className="px-6 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
+              style={{ background: ACCENT }}>
               {saving ? "Creating..." : "Create EA"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
-              className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-sm font-medium hover:text-gray-700 transition">
+              className="px-6 py-2.5 rounded-xl text-sm font-medium transition"
+              style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
               Cancel
             </button>
           </div>
@@ -128,42 +148,53 @@ export default function EAsPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${ACCENT}`, borderTopColor: "transparent" }} />
         </div>
       ) : eas.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-gray-400 text-sm">No trading bots yet. Create one to get started.</p>
+          <p className="text-sm" style={{ color: MUTED }}>No trading bots yet. Create one to get started.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {eas.map(ea => (
-            <div key={ea.id} className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black ${ea.is_active ? "bg-gray-100 text-gray-900" : "bg-gray-100 text-gray-400"}`}>
+            <div key={ea.id} className="rounded-2xl p-5 flex items-center gap-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black"
+                style={{ background: ea.is_active ? "rgba(61,224,92,0.1)" : "rgba(255,255,255,0.05)", color: ea.is_active ? ACCENT : MUTED }}
+              >
                 {ea.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-gray-900 truncate">{ea.name}</p>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${ea.is_active ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                  <p className="text-sm font-bold text-white truncate">{ea.name}</p>
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: ea.is_active ? "rgba(61,224,92,0.12)" : "rgba(255,255,255,0.06)",
+                      color: ea.is_active ? ACCENT : MUTED,
+                    }}
+                  >
                     {ea.is_active ? "ACTIVE" : "INACTIVE"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] text-gray-400 font-mono">EA ID: {ea.mentor_id}</span>
-                  <button onClick={() => copyKey(ea.mentor_id)} className="text-gray-400 hover:text-gray-900 transition">
-                    {copied === ea.mentor_id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                  <span className="text-[10px] font-mono" style={{ color: MUTED }}>EA ID: {ea.mentor_id}</span>
+                  <button onClick={() => copyKey(ea.mentor_id)} className="transition" style={{ color: MUTED }}>
+                    {copied === ea.mentor_id ? <Check size={12} style={{ color: ACCENT }} /> : <Copy size={12} />}
                   </button>
                 </div>
-                {ea.description && <p className="text-xs text-gray-400 mt-1 truncate">{ea.description}</p>}
+                {ea.description && <p className="text-xs mt-1 truncate" style={{ color: MUTED }}>{ea.description}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleActive(ea)}
-                  className={`p-2 rounded-lg transition ${ea.is_active ? "text-green-500 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}
+                  className="p-2 rounded-lg transition"
+                  style={{ color: ea.is_active ? ACCENT : MUTED }}
                   title={ea.is_active ? "Deactivate" : "Activate"}>
                   {ea.is_active ? <Power size={16} /> : <PowerOff size={16} />}
                 </button>
                 <button onClick={() => deleteEA(ea.id)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                  className="p-2 rounded-lg transition hover:text-red-400"
+                  style={{ color: MUTED }}
                   title="Delete">
                   <Trash2 size={16} />
                 </button>

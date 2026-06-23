@@ -5,6 +5,12 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Upload, Save, Image as ImageIcon } from "lucide-react";
 import type { Branding } from "@/lib/database.types";
 
+const ACCENT = "#3DE05C";
+const CARD = "#161B22";
+const MUTED = "#8B949E";
+const INPUT_BG = "rgba(13,17,23,0.8)";
+const BORDER = "rgba(61,224,92,0.1)";
+
 const GLOW_PRESETS = [
   "#00BFFF", "#A855F7", "#00FF88", "#FF3366", "#FF6B00",
   "#FFD700", "#FF00FF", "#EF4444", "#3B82F6", "#14B8A6",
@@ -102,7 +108,7 @@ export default function BrandingPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${ACCENT}`, borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -110,54 +116,63 @@ export default function BrandingPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-xl font-black tracking-wide text-gray-900">White-Label Branding</h2>
-        <p className="text-gray-500 text-sm mt-1">Customize how your app looks for your users</p>
+        <h2 className="text-xl font-black tracking-wide text-white">White-Label Branding</h2>
+        <p className="text-sm mt-1" style={{ color: MUTED }}>Customize how your app looks for your users</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
-        {/* App Name */}
+      <div className="rounded-2xl p-6 space-y-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">APP NAME</label>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>APP NAME</label>
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
+            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onBlur={e => e.target.style.borderColor = BORDER}
             placeholder="Your App Name" />
         </div>
 
-        {/* Tagline */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">TAGLINE</label>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>TAGLINE</label>
           <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition"
+            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onBlur={e => e.target.style.borderColor = BORDER}
             placeholder="e.g. Fully automated mobile EA" />
         </div>
 
-        {/* Glow Color */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">GLOW COLOR</label>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>GLOW COLOR</label>
           <div className="flex flex-wrap gap-3">
             {GLOW_PRESETS.map(color => (
               <button key={color} onClick={() => setForm(f => ({ ...f, glow_color: color }))}
-                className={`w-8 h-8 rounded-full border-2 transition ${form.glow_color === color ? "border-gray-900 scale-110" : "border-gray-200"}`}
-                style={{ backgroundColor: color, boxShadow: form.glow_color === color ? `0 0 10px ${color}` : "none" }} />
+                className="w-8 h-8 rounded-full transition"
+                style={{
+                  backgroundColor: color,
+                  border: form.glow_color === color ? "2px solid #F0F6FC" : `2px solid rgba(255,255,255,0.1)`,
+                  boxShadow: form.glow_color === color ? `0 0 12px ${color}` : "none",
+                  transform: form.glow_color === color ? "scale(1.15)" : "scale(1)",
+                }} />
             ))}
           </div>
         </div>
 
-        <div className="h-px bg-gray-200" />
+        <div style={{ height: 1, background: BORDER }} />
 
-        {/* Logo Upload */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">APP LOGO</label>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>APP LOGO</label>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                 style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
               {logoPreview ? (
                 <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <ImageIcon className="text-gray-300" size={24} />
+                <ImageIcon style={{ color: MUTED }} size={24} />
               )}
             </div>
             <button onClick={() => logoRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-gray-900 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+              style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
               <Upload size={14} />
               Upload Logo
             </button>
@@ -165,13 +180,12 @@ export default function BrandingPage() {
           </div>
         </div>
 
-        {/* Robot Image Upload */}
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-gray-400 block mb-2">ROBOT / HERO IMAGE</label>
-          <p className="text-[10px] text-gray-400 mb-3">This appears as the main avatar in the app</p>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>ROBOT / HERO IMAGE</label>
+          <p className="text-[10px] mb-3" style={{ color: MUTED }}>This appears as the main avatar in the app</p>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full border-2 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0"
-                 style={{ borderColor: form.glow_color + "60" }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0"
+                 style={{ border: `2px solid ${form.glow_color}60`, background: "rgba(255,255,255,0.04)" }}>
               {robotPreview ? (
                 <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
               ) : (
@@ -179,7 +193,8 @@ export default function BrandingPage() {
               )}
             </div>
             <button onClick={() => robotRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:border-gray-900 transition">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+              style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
               <Upload size={14} />
               Upload Image
             </button>
@@ -188,12 +203,11 @@ export default function BrandingPage() {
         </div>
       </div>
 
-      {/* Preview */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <p className="text-[10px] font-bold tracking-widest text-gray-400 mb-4">PREVIEW</p>
+      <div className="rounded-2xl p-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+        <p className="text-[10px] font-bold tracking-widest mb-4" style={{ color: MUTED }}>PREVIEW</p>
         <div className="flex flex-col items-center py-6">
-          <div className="w-16 h-16 rounded-full border-2 flex items-center justify-center overflow-hidden mb-3"
-               style={{ borderColor: form.glow_color, boxShadow: `0 0 15px ${form.glow_color}40` }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-3"
+               style={{ border: `2px solid ${form.glow_color}`, boxShadow: `0 0 20px ${form.glow_color}40` }}>
             {robotPreview ? (
               <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
             ) : (
@@ -201,13 +215,13 @@ export default function BrandingPage() {
             )}
           </div>
           <p className="text-lg font-black tracking-wider" style={{ color: form.glow_color }}>{form.app_name || "App Name"}</p>
-          {form.tagline && <p className="text-xs text-gray-500 mt-1">{form.tagline}</p>}
+          {form.tagline && <p className="text-xs mt-1" style={{ color: MUTED }}>{form.tagline}</p>}
         </div>
       </div>
 
-      {/* Save */}
       <button onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50 shadow-sm">
+        className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
+        style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }}>
         <Save size={16} />
         {saving ? "Saving..." : success ? "Saved!" : "Save Branding"}
       </button>

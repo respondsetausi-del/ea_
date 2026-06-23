@@ -7,6 +7,12 @@ import {
   BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock,
 } from "lucide-react";
 
+const ACCENT = "#3DE05C";
+const CARD = "#161B22";
+const MUTED = "#8B949E";
+const INPUT_BG = "rgba(13,17,23,0.8)";
+const BORDER = "rgba(61,224,92,0.1)";
+
 type Distributor = {
   id: string; email: string; name: string; verified: boolean; onboarded: boolean;
   isSuperAdmin: boolean; isActive: boolean; createdAt: string;
@@ -134,13 +140,17 @@ export default function AdminPage() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" /></div>;
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${ACCENT}`, borderTopColor: "transparent" }} />
+      </div>
+    );
   }
   if (error) {
     return (
       <div className="max-w-md mx-auto text-center py-20">
-        <AlertTriangle className="mx-auto text-amber-500 mb-3" size={28} />
-        <p className="text-sm font-semibold text-gray-900">{error}</p>
+        <AlertTriangle className="mx-auto mb-3" style={{ color: "#F59E0B" }} size={28} />
+        <p className="text-sm font-semibold text-white">{error}</p>
       </div>
     );
   }
@@ -152,17 +162,16 @@ export default function AdminPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-2">
-        <Crown className="text-amber-500" size={22} />
+        <Crown style={{ color: "#F59E0B" }} size={22} />
         <div>
-          <h2 className="text-xl font-black tracking-wide text-gray-900">Super Admin</h2>
-          <p className="text-gray-500 text-sm">Platform-wide control over every distributor, user, and the live signal system.</p>
+          <h2 className="text-xl font-black tracking-wide text-white">Super Admin</h2>
+          <p className="text-sm" style={{ color: MUTED }}>Platform-wide control over every distributor, user, and the live signal system.</p>
         </div>
-        <button onClick={load} className="ml-auto flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-900">
+        <button onClick={load} className="ml-auto flex items-center gap-2 text-xs font-semibold transition" style={{ color: MUTED }}>
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Stat icon={Users} label="Distributors" value={data.stats.distributors} />
         <Stat icon={BadgeCheck} label="Verified" value={data.stats.verifiedDistributors} />
@@ -172,7 +181,6 @@ export default function AdminPage() {
         <Stat icon={KeyRound} label="Licenses" value={data.stats.licensesIssued} />
       </div>
 
-      {/* Admins */}
       <Section title="Admins" icon={Crown}>
         <form
           onSubmit={(e) => { e.preventDefault(); const v = newAdmin.trim(); if (v) adminAct("add", v); }}
@@ -183,36 +191,43 @@ export default function AdminPage() {
             value={newAdmin}
             onChange={(e) => setNewAdmin(e.target.value)}
             placeholder="new-admin@email.com"
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900"
+            className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onBlur={e => e.target.style.borderColor = BORDER}
           />
           <button
             type="submit"
             disabled={addingAdmin || !newAdmin.trim()}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
+            style={{ background: ACCENT }}
           >
             {addingAdmin ? <RefreshCw size={15} className="animate-spin" /> : <UserPlus size={15} />}
             Add Admin
           </button>
         </form>
-        <p className="text-[11px] text-gray-400 mb-3">
+        <p className="text-[11px] mb-3" style={{ color: MUTED }}>
           Adding an email grants super-admin immediately if they&apos;re registered, or the moment they sign up.
         </p>
         <div className="space-y-2">
           {data.admins.map(a => (
-            <div key={a.email} className="border border-gray-200 rounded-xl p-3 flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${a.registered ? "bg-amber-100 text-amber-600" : "bg-gray-100 text-gray-400"}`}>
+            <div key={a.email} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: a.registered ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: a.registered ? "#F59E0B" : MUTED }}
+              >
                 {a.registered ? <Crown size={15} /> : <Clock size={15} />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{a.email}</p>
+                  <p className="text-sm font-semibold text-white truncate">{a.email}</p>
                   {a.locked && <Tag color="gray">CONFIG</Tag>}
                   {a.registered ? <Tag color="green">ACTIVE</Tag> : <Tag color="amber">PENDING SIGNUP</Tag>}
                 </div>
-                {a.name && <p className="text-[11px] text-gray-400 truncate">{a.name}</p>}
+                {a.name && <p className="text-[11px] truncate" style={{ color: MUTED }}>{a.name}</p>}
               </div>
               {a.locked ? (
-                <span title="Set in server config (SUPER_ADMIN_EMAILS)" className="text-gray-300"><Lock size={15} /></span>
+                <span title="Set in server config (SUPER_ADMIN_EMAILS)" style={{ color: "rgba(255,255,255,0.15)" }}><Lock size={15} /></span>
               ) : (
                 <ActionBtn
                   busy={busy === `admin:${a.email}`}
@@ -227,12 +242,11 @@ export default function AdminPage() {
         </div>
       </Section>
 
-      {/* MQTT monitor */}
       <Section title="MQTT Signal System" icon={Radio}>
         {!data.mqtt?.configured ? (
-          <p className="text-xs text-gray-400">App server not configured (set APP_SERVER_URL + ADMIN_API_KEY).</p>
+          <p className="text-xs" style={{ color: MUTED }}>App server not configured (set APP_SERVER_URL + ADMIN_API_KEY).</p>
         ) : data.mqtt?.error ? (
-          <p className="text-xs text-amber-600">Monitor unavailable: {data.mqtt.error}</p>
+          <p className="text-xs text-amber-400">Monitor unavailable: {data.mqtt.error}</p>
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">
@@ -244,10 +258,10 @@ export default function AdminPage() {
             </div>
             {data.mqtt?.signals?.recent?.length > 0 && (
               <div>
-                <p className="text-[10px] font-bold tracking-widest text-gray-400 mb-2">RECENT SIGNALS</p>
+                <p className="text-[10px] font-bold tracking-widest mb-2" style={{ color: MUTED }}>RECENT SIGNALS</p>
                 <div className="flex flex-wrap gap-2">
                   {data.mqtt.signals.recent.slice(0, 12).map((s: any, i: number) => (
-                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md bg-gray-100 text-gray-700">
+                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md" style={{ background: "rgba(61,224,92,0.08)", color: ACCENT }}>
                       {s.symbol}{s.direction ? `/${s.direction}` : ""}
                     </span>
                   ))}
@@ -258,19 +272,18 @@ export default function AdminPage() {
         )}
       </Section>
 
-      {/* Distributors */}
       <Section title="Distributors" icon={Users}>
         <div className="space-y-2">
           {data.distributors.map(d => (
-            <div key={d.id} className="border border-gray-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
+            <div key={d.id} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-bold text-gray-900 truncate">{d.name}</p>
+                  <p className="text-sm font-bold text-white truncate">{d.name}</p>
                   {d.isSuperAdmin && <Tag color="amber">ADMIN</Tag>}
                   {d.verified ? <Tag color="green">APPROVED</Tag> : <Tag color="amber">PENDING</Tag>}
                   {!d.isActive && <Tag color="red">SUSPENDED</Tag>}
                 </div>
-                <p className="text-[11px] text-gray-400 truncate">{d.email} · {d.eaCount} bots · {d.userCount} users · {d.licensesSent} licenses</p>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>{d.email} · {d.eaCount} bots · {d.userCount} users · {d.licensesSent} licenses</p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {!d.verified && <ActionBtn busy={isBusy(d.id, "verify")} onClick={() => act("distributor", d.id, "verify")} icon={BadgeCheck} title="Approve account" />}
@@ -287,19 +300,18 @@ export default function AdminPage() {
         </div>
       </Section>
 
-      {/* App users */}
       <Section title="App Users" icon={Activity}>
         <div className="space-y-2">
-          {data.appUsers.length === 0 && <p className="text-xs text-gray-400">No app users yet.</p>}
+          {data.appUsers.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No app users yet.</p>}
           {data.appUsers.map(u => (
-            <div key={u.id} className="border border-gray-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
+            <div key={u.id} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{u.email}</p>
+                  <p className="text-sm font-semibold text-white truncate">{u.email}</p>
                   {u.hasLicense ? <Tag color="green">LICENSED</Tag> : <Tag color="gray">NO KEY</Tag>}
                   {!u.isActive && <Tag color="red">DISABLED</Tag>}
                 </div>
-                <p className="text-[11px] text-gray-400 truncate">{u.distributorName} · {u.eaName}</p>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>{u.distributorName} · {u.eaName}</p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <ActionBtn busy={isBusy(u.id, "resendLicense")} onClick={() => act("app_user", u.id, "resendLicense")} icon={Send} title={u.hasLicense ? "Resend license" : "Issue license"} />
@@ -318,20 +330,20 @@ export default function AdminPage() {
 
 function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
-      <Icon className="text-gray-400 mb-2" size={16} />
-      <p className="text-xl font-black text-gray-900">{value ?? 0}</p>
-      <p className="text-[10px] text-gray-500 font-medium">{label}</p>
+    <div className="rounded-xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+      <Icon style={{ color: ACCENT }} className="mb-2" size={16} />
+      <p className="text-xl font-black text-white">{value ?? 0}</p>
+      <p className="text-[10px] font-medium" style={{ color: MUTED }}>{label}</p>
     </div>
   );
 }
 
 function Section({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5">
+    <div className="rounded-2xl p-5" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
       <div className="flex items-center gap-2 mb-4">
-        <Icon size={16} className="text-gray-700" />
-        <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+        <Icon size={16} style={{ color: ACCENT }} />
+        <h3 className="text-sm font-bold text-white">{title}</h3>
       </div>
       {children}
     </div>
@@ -339,27 +351,39 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 }
 
 function Tag({ color, children }: { color: "green" | "red" | "amber" | "gray"; children: React.ReactNode }) {
-  const map = {
-    green: "bg-green-100 text-green-600", red: "bg-red-100 text-red-600",
-    amber: "bg-amber-100 text-amber-600", gray: "bg-gray-100 text-gray-400",
+  const map: Record<string, { bg: string; fg: string }> = {
+    green: { bg: "rgba(61,224,92,0.12)", fg: ACCENT },
+    red: { bg: "rgba(239,68,68,0.12)", fg: "#EF4444" },
+    amber: { bg: "rgba(245,158,11,0.12)", fg: "#F59E0B" },
+    gray: { bg: "rgba(255,255,255,0.06)", fg: MUTED },
   };
-  return <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${map[color]}`}>{children}</span>;
+  const c = map[color];
+  return (
+    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.bg, color: c.fg }}>
+      {children}
+    </span>
+  );
 }
 
 function Pill({ label, value }: { label: string; value: any }) {
   return (
-    <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
-      <p className="text-[10px] text-gray-400">{label}</p>
-      <p className="text-sm font-bold text-gray-900">{value ?? "—"}</p>
+    <div className="px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+      <p className="text-[10px]" style={{ color: MUTED }}>{label}</p>
+      <p className="text-sm font-bold text-white">{value ?? "—"}</p>
     </div>
   );
 }
 
 function Health({ ok, label }: { ok: boolean; label: string }) {
   return (
-    <div className={`px-3 py-2 rounded-lg border flex items-center gap-2 ${ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-      <ShieldCheck size={16} className={ok ? "text-green-600" : "text-red-500"} />
-      <span className={`text-sm font-bold ${ok ? "text-green-700" : "text-red-600"}`}>{label}</span>
+    <div className="px-3 py-2 rounded-lg flex items-center gap-2"
+      style={{
+        background: ok ? "rgba(61,224,92,0.08)" : "rgba(239,68,68,0.08)",
+        border: `1px solid ${ok ? "rgba(61,224,92,0.2)" : "rgba(239,68,68,0.2)"}`,
+      }}
+    >
+      <ShieldCheck size={16} style={{ color: ok ? ACCENT : "#EF4444" }} />
+      <span className="text-sm font-bold" style={{ color: ok ? ACCENT : "#EF4444" }}>{label}</span>
     </div>
   );
 }
@@ -367,7 +391,20 @@ function Health({ ok, label }: { ok: boolean; label: string }) {
 function ActionBtn({ icon: Icon, title, onClick, busy, danger }: { icon: any; title: string; onClick: () => void; busy?: boolean; danger?: boolean }) {
   return (
     <button onClick={onClick} disabled={busy} title={title}
-      className={`p-2 rounded-lg border transition disabled:opacity-40 ${danger ? "border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300" : "border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900"}`}>
+      className="p-2 rounded-lg transition disabled:opacity-40"
+      style={{
+        border: `1px solid ${BORDER}`,
+        color: danger ? MUTED : MUTED,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.color = danger ? "#EF4444" : "#F0F6FC";
+        e.currentTarget.style.borderColor = danger ? "rgba(239,68,68,0.4)" : "rgba(61,224,92,0.3)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.color = MUTED;
+        e.currentTarget.style.borderColor = BORDER;
+      }}
+    >
       {busy ? <RefreshCw size={15} className="animate-spin" /> : <Icon size={15} />}
     </button>
   );

@@ -5,6 +5,11 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { KeyRound, MailCheck, Send, Loader2, Copy, Check } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
+const ACCENT = "#3DE05C";
+const CARD = "#161B22";
+const MUTED = "#8B949E";
+const BORDER = "rgba(61,224,92,0.1)";
+
 type Row = AppUser & { ea_name?: string };
 
 export default function LicensesPage() {
@@ -84,19 +89,19 @@ export default function LicensesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-black tracking-wide text-gray-900">Generate License</h2>
-        <p className="text-gray-500 text-sm mt-1">
+        <h2 className="text-xl font-black tracking-wide text-white">Generate License</h2>
+        <p className="text-sm mt-1" style={{ color: MUTED }}>
           Issue an access key to an invited user. You can copy the key below or email it directly.
         </p>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${ACCENT}`, borderTopColor: "transparent" }} />
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-gray-400 text-sm">No invited users yet. Add users first, then issue them a license.</p>
+          <p className="text-sm" style={{ color: MUTED }}>No invited users yet. Add users first, then issue them a license.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -105,29 +110,32 @@ export default function LicensesPage() {
             const hasKey = !!u.license_key;
             const busy = sendingId === u.id;
             return (
-              <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <div key={u.id} className="rounded-xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
                 <div className="flex items-center gap-4">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sent ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: sent ? "rgba(61,224,92,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
+                  >
                     {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{u.email}</p>
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-sm font-semibold text-white truncate">{u.email}</p>
+                    <p className="text-[10px]" style={{ color: MUTED }}>
                       {u.ea_name || "Unknown bot"}
                       {sent && <> · Key sent {new Date(u.license_sent_at as string).toLocaleDateString()}</>}
                     </p>
                     {notice?.id === u.id && (
-                      <p className={`text-[11px] mt-1 ${notice.ok ? "text-green-600" : "text-amber-600"}`}>{notice.msg}</p>
+                      <p className={`text-[11px] mt-1 ${notice.ok ? "" : "text-amber-400"}`} style={notice.ok ? { color: ACCENT } : {}}>{notice.msg}</p>
                     )}
                   </div>
                   <button
                     onClick={() => generate(u)}
                     disabled={busy}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50 ${
-                      sent
-                        ? "border border-gray-300 text-gray-600 hover:border-gray-900"
-                        : "bg-gray-900 text-white hover:bg-gray-800"
-                    }`}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50"
+                    style={sent
+                      ? { border: `1px solid ${BORDER}`, color: MUTED }
+                      : { background: ACCENT, color: "#000" }
+                    }
                   >
                     {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                     {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
@@ -135,15 +143,19 @@ export default function LicensesPage() {
                 </div>
                 {hasKey && (
                   <div className="mt-3 ml-13 flex items-center gap-2">
-                    <code className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono text-gray-700 tracking-wide select-all">
+                    <code
+                      className="flex-1 rounded-lg px-3 py-2 text-xs font-mono tracking-wide select-all"
+                      style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}`, color: ACCENT }}
+                    >
                       {u.license_key}
                     </code>
                     <button
                       onClick={() => copyKey(u.id, u.license_key!)}
-                      className="shrink-0 p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 transition"
+                      className="shrink-0 p-2 rounded-lg transition"
+                      style={{ border: `1px solid ${BORDER}`, color: MUTED }}
                       title="Copy key"
                     >
-                      {copiedId === u.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                      {copiedId === u.id ? <Check size={14} style={{ color: ACCENT }} /> : <Copy size={14} />}
                     </button>
                   </div>
                 )}
