@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
 import Link from "next/link";
-import { LayoutDashboard, Bot, Palette, Users, KeyRound, Crown, LogOut, Menu, X, Zap } from "lucide-react";
+import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, Zap, UserCircle } from "lucide-react";
 
 const ACCENT = "#FFB800";
 const BG = "#0D1117";
@@ -20,7 +20,7 @@ const NAV_MAIN = [
 
 const NAV_MANAGE = [
   { href: "/dashboard/licenses", label: "Generate License", icon: KeyRound },
-  { href: "/dashboard/branding", label: "Branding", icon: Palette },
+  { href: "/dashboard/branding", label: "Account", icon: UserCircle },
 ];
 
 const ADMIN_NAV = { href: "/dashboard/admin", label: "Super Admin", icon: Crown };

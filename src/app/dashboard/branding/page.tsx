@@ -11,17 +11,11 @@ const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(255,184,0,0.1)";
 
-const GLOW_PRESETS = [
-  "#00BFFF", "#A855F7", "#00FF88", "#FF3366", "#FF6B00",
-  "#FFD700", "#FF00FF", "#EF4444", "#3B82F6", "#14B8A6",
-  "#84CC16", "#00FFCC", "#EC4899", "#FFFFFF",
-];
-
-export default function BrandingPage() {
+export default function AccountPage() {
   const [branding, setBranding] = useState<Branding | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ app_name: "Free Robot", glow_color: "#FFFFFF", tagline: "" });
+  const [form, setForm] = useState({ app_name: "", full_name: "", email: "" });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [robotPreview, setRobotPreview] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -33,15 +27,23 @@ export default function BrandingPage() {
   useEffect(() => {
     async function load() {
       if (DEV_MODE) {
+        setForm({ app_name: "Free Robot", full_name: "respond", email: "respondsetausi@gmail.com" });
         setLoading(false);
         return;
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setForm(f => ({
+        ...f,
+        full_name: user.user_metadata?.name || "",
+        email: user.email || "",
+      }));
+
       const { data } = await supabase.from("branding").select("*").eq("distributor_id", user.id).single();
       if (data) {
         setBranding(data);
-        setForm({ app_name: data.app_name, glow_color: data.glow_color, tagline: data.tagline || "" });
+        setForm(f => ({ ...f, app_name: data.app_name }));
         setLogoPreview(data.logo_url);
         setRobotPreview(data.robot_image_url);
       }
@@ -75,9 +77,9 @@ export default function BrandingPage() {
       }
 
       const payload = {
-        app_name: form.app_name,
-        glow_color: form.glow_color,
-        tagline: form.tagline || null,
+        app_name: form.app_name || "Free Robot",
+        glow_color: branding?.glow_color || "#FFFFFF",
+        tagline: null,
         logo_url,
         robot_image_url,
         updated_at: new Date().toISOString(),
@@ -89,10 +91,14 @@ export default function BrandingPage() {
         await supabase.from("branding").insert({ ...payload, distributor_id: user.id });
       }
 
+      if (form.full_name) {
+        await supabase.auth.updateUser({ data: { name: form.full_name } });
+      }
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Upload failed");
+      alert(err instanceof Error ? err.message : "Save failed");
     }
     setSaving(false);
   };
@@ -116,45 +122,42 @@ export default function BrandingPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-xl font-black tracking-wide text-white">White-Label Branding</h2>
-        <p className="text-sm mt-1" style={{ color: MUTED }}>Customize how your app looks for your users</p>
+        <h2 className="text-xl font-black tracking-wide text-white">Account</h2>
+        <p className="text-sm mt-1" style={{ color: MUTED }}>Your details and app branding</p>
       </div>
 
       <div className="rounded-2xl p-6 space-y-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>YOUR DETAILS</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>FULL NAME</label>
+            <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+              onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+              onBlur={e => e.target.style.borderColor = BORDER}
+              placeholder="Your full name" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EMAIL</label>
+            <input value={form.email} disabled
+              className="w-full rounded-xl px-4 py-3 text-sm text-white/50 focus:outline-none cursor-not-allowed"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }} />
+          </div>
+        </div>
+
+        <div style={{ height: 1, background: BORDER }} />
+        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>BRAND</p>
+
         <div>
-          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>APP NAME</label>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>BRAND NAME</label>
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
             onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
-            placeholder="Your App Name" />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>TAGLINE</label>
-          <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
-            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
-            onBlur={e => e.target.style.borderColor = BORDER}
-            placeholder="e.g. Fully automated mobile EA" />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>GLOW COLOR</label>
-          <div className="flex flex-wrap gap-3">
-            {GLOW_PRESETS.map(color => (
-              <button key={color} onClick={() => setForm(f => ({ ...f, glow_color: color }))}
-                className="w-8 h-8 rounded-full transition"
-                style={{
-                  backgroundColor: color,
-                  border: form.glow_color === color ? "2px solid #F0F6FC" : `2px solid rgba(255,255,255,0.1)`,
-                  boxShadow: form.glow_color === color ? `0 0 12px ${color}` : "none",
-                  transform: form.glow_color === color ? "scale(1.15)" : "scale(1)",
-                }} />
-            ))}
-          </div>
+            placeholder="Your brand / app name" />
         </div>
 
         <div style={{ height: 1, background: BORDER }} />
@@ -185,7 +188,7 @@ export default function BrandingPage() {
           <p className="text-[10px] mb-3" style={{ color: MUTED }}>This appears as the main avatar in the app</p>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0"
-                 style={{ border: `2px solid ${form.glow_color}60`, background: "rgba(255,255,255,0.04)" }}>
+                 style={{ border: `2px solid rgba(255,184,0,0.3)`, background: "rgba(255,255,255,0.04)" }}>
               {robotPreview ? (
                 <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
               ) : (
@@ -207,15 +210,15 @@ export default function BrandingPage() {
         <p className="text-[10px] font-bold tracking-widest mb-4" style={{ color: MUTED }}>PREVIEW</p>
         <div className="flex flex-col items-center py-6">
           <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-3"
-               style={{ border: `2px solid ${form.glow_color}`, boxShadow: `0 0 20px ${form.glow_color}40` }}>
+               style={{ border: `2px solid ${ACCENT}`, boxShadow: `0 0 20px rgba(255,184,0,0.25)` }}>
             {robotPreview ? (
               <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xl font-black" style={{ color: form.glow_color }}>{form.app_name.charAt(0)}</span>
+              <span className="text-xl font-black" style={{ color: ACCENT }}>{(form.app_name || "A").charAt(0)}</span>
             )}
           </div>
-          <p className="text-lg font-black tracking-wider" style={{ color: form.glow_color }}>{form.app_name || "App Name"}</p>
-          {form.tagline && <p className="text-xs mt-1" style={{ color: MUTED }}>{form.tagline}</p>}
+          <p className="text-lg font-black tracking-wider" style={{ color: ACCENT }}>{form.app_name || "Brand Name"}</p>
+          <p className="text-xs mt-1" style={{ color: MUTED }}>{form.full_name || "Your Name"}</p>
         </div>
       </div>
 
@@ -223,7 +226,7 @@ export default function BrandingPage() {
         className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
         style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}>
         <Save size={16} />
-        {saving ? "Saving..." : success ? "Saved!" : "Save Branding"}
+        {saving ? "Saving..." : success ? "Saved!" : "Save Account"}
       </button>
     </div>
   );
