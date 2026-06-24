@@ -5,11 +5,11 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Plus, Trash2, UserCheck, UserX } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<(AppUser & { ea_name?: string })[]>([]);
@@ -102,7 +102,7 @@ export default function UsersPage() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition text-black"
-          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }}
+          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}
         >
           <Plus size={16} />
           Add User
@@ -118,7 +118,7 @@ export default function UsersPage() {
               <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="user@example.com" required />
             </div>
@@ -127,7 +127,7 @@ export default function UsersPage() {
               <select value={form.ea_id} onChange={e => setForm(f => ({ ...f, ea_id: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}>
                 <option value="">Select EA...</option>
                 {eas.map(ea => <option key={ea.id} value={ea.id}>{ea.name} ({ea.mentor_id})</option>)}
@@ -164,7 +164,7 @@ export default function UsersPage() {
             <div key={u.id} className="rounded-xl p-4 flex items-center gap-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: u.is_active ? "rgba(61,224,92,0.1)" : "rgba(255,255,255,0.05)", color: u.is_active ? ACCENT : MUTED }}
+                style={{ background: u.is_active ? "rgba(255,184,0,0.1)" : "rgba(255,255,255,0.05)", color: u.is_active ? ACCENT : MUTED }}
               >
                 {u.email.charAt(0).toUpperCase()}
               </div>

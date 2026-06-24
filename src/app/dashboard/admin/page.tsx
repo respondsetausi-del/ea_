@@ -7,11 +7,11 @@ import {
   BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock,
 } from "lucide-react";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 
 type Distributor = {
   id: string; email: string; name: string; verified: boolean; onboarded: boolean;
@@ -193,7 +193,7 @@ export default function AdminPage() {
             placeholder="new-admin@email.com"
             className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
           />
           <button
@@ -261,7 +261,7 @@ export default function AdminPage() {
                 <p className="text-[10px] font-bold tracking-widest mb-2" style={{ color: MUTED }}>RECENT SIGNALS</p>
                 <div className="flex flex-wrap gap-2">
                   {data.mqtt.signals.recent.slice(0, 12).map((s: any, i: number) => (
-                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md" style={{ background: "rgba(61,224,92,0.08)", color: ACCENT }}>
+                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md" style={{ background: "rgba(255,184,0,0.08)", color: ACCENT }}>
                       {s.symbol}{s.direction ? `/${s.direction}` : ""}
                     </span>
                   ))}
@@ -352,7 +352,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 
 function Tag({ color, children }: { color: "green" | "red" | "amber" | "gray"; children: React.ReactNode }) {
   const map: Record<string, { bg: string; fg: string }> = {
-    green: { bg: "rgba(61,224,92,0.12)", fg: ACCENT },
+    green: { bg: "rgba(255,184,0,0.12)", fg: ACCENT },
     red: { bg: "rgba(239,68,68,0.12)", fg: "#EF4444" },
     amber: { bg: "rgba(245,158,11,0.12)", fg: "#F59E0B" },
     gray: { bg: "rgba(255,255,255,0.06)", fg: MUTED },
@@ -378,8 +378,8 @@ function Health({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="px-3 py-2 rounded-lg flex items-center gap-2"
       style={{
-        background: ok ? "rgba(61,224,92,0.08)" : "rgba(239,68,68,0.08)",
-        border: `1px solid ${ok ? "rgba(61,224,92,0.2)" : "rgba(239,68,68,0.2)"}`,
+        background: ok ? "rgba(255,184,0,0.08)" : "rgba(239,68,68,0.08)",
+        border: `1px solid ${ok ? "rgba(255,184,0,0.2)" : "rgba(239,68,68,0.2)"}`,
       }}
     >
       <ShieldCheck size={16} style={{ color: ok ? ACCENT : "#EF4444" }} />
@@ -398,7 +398,7 @@ function ActionBtn({ icon: Icon, title, onClick, busy, danger }: { icon: any; ti
       }}
       onMouseEnter={e => {
         e.currentTarget.style.color = danger ? "#EF4444" : "#F0F6FC";
-        e.currentTarget.style.borderColor = danger ? "rgba(239,68,68,0.4)" : "rgba(61,224,92,0.3)";
+        e.currentTarget.style.borderColor = danger ? "rgba(239,68,68,0.4)" : "rgba(255,184,0,0.3)";
       }}
       onMouseLeave={e => {
         e.currentTarget.style.color = MUTED;

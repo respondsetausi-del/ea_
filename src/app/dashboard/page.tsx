@@ -5,7 +5,7 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Bot, Users, Palette, Activity } from "lucide-react";
 import Link from "next/link";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 
@@ -45,7 +45,7 @@ export default function DashboardOverview() {
   const greeting = hour >= 5 && hour < 12 ? "Good morning" : hour >= 12 && hour < 17 ? "Good afternoon" : "Good evening";
 
   const cards = [
-    { label: "Trading Bots", value: stats.eas, icon: Bot, href: "/dashboard/eas", gradient: "linear-gradient(135deg, rgba(61,224,92,0.15), rgba(61,224,92,0.05))" },
+    { label: "Trading Bots", value: stats.eas, icon: Bot, href: "/dashboard/eas", gradient: "linear-gradient(135deg, rgba(255,184,0,0.15), rgba(255,184,0,0.05))" },
     { label: "App Users", value: stats.users, icon: Users, href: "/dashboard/users", gradient: "linear-gradient(135deg, rgba(56,189,248,0.15), rgba(56,189,248,0.05))" },
     { label: "Branding", value: stats.hasBranding ? "Set Up" : "Not Set", icon: Palette, href: "/dashboard/branding", gradient: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05))" },
   ];
@@ -75,11 +75,11 @@ export default function DashboardOverview() {
                   className="rounded-2xl p-5 transition-all group"
                   style={{
                     background: CARD,
-                    border: "1px solid rgba(61,224,92,0.08)",
+                    border: "1px solid rgba(255,184,0,0.08)",
                     boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(61,224,92,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(61,224,92,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,184,0,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,184,0,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: card.gradient }}>
@@ -94,7 +94,7 @@ export default function DashboardOverview() {
             })}
           </div>
 
-          <div className="rounded-2xl p-6" style={{ background: CARD, border: "1px solid rgba(61,224,92,0.08)" }}>
+          <div className="rounded-2xl p-6" style={{ background: CARD, border: "1px solid rgba(255,184,0,0.08)" }}>
             <h3 className="text-sm font-bold text-white mb-3">Quick Start</h3>
             <div className="space-y-3">
               <QuickStep num={1} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
@@ -121,14 +121,14 @@ function QuickStep({ num, done, label, desc, href }: { num: number; done: boolea
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
         style={{
-          background: done ? "rgba(61,224,92,0.12)" : "rgba(255,255,255,0.06)",
-          color: done ? "#3DE05C" : "#8B949E",
+          background: done ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.06)",
+          color: done ? "#FFB800" : "#8B949E",
         }}
       >
         {done ? "✓" : num}
       </div>
       <div>
-        <p className="text-sm font-semibold" style={{ color: done ? "#3DE05C" : "#F0F6FC" }}>{label}</p>
+        <p className="text-sm font-semibold" style={{ color: done ? "#FFB800" : "#F0F6FC" }}>{label}</p>
         <p className="text-xs mt-0.5" style={{ color: "#8B949E" }}>{desc}</p>
       </div>
     </Link>

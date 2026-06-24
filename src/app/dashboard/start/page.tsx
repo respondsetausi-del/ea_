@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Bot, Users, KeyRound, Palette, Check, Lock, ArrowRight, PartyPopper } from "lucide-react";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 const DEV_ONBOARDED_KEY = "dev_onboarded";
 
 type Counts = { eas: number; users: number; licenses: number; branding: boolean };
@@ -94,8 +94,8 @@ export default function OnboardingWizard() {
                   key={step.key}
                   className="rounded-2xl p-5 flex items-center gap-4 transition"
                   style={{
-                    background: isCurrent ? CARD : isDone ? "rgba(61,224,92,0.04)" : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${isCurrent ? "rgba(61,224,92,0.25)" : isDone ? "rgba(61,224,92,0.12)" : BORDER}`,
+                    background: isCurrent ? CARD : isDone ? "rgba(255,184,0,0.04)" : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${isCurrent ? "rgba(255,184,0,0.25)" : isDone ? "rgba(255,184,0,0.12)" : BORDER}`,
                     opacity: isLocked ? 0.5 : 1,
                     boxShadow: isCurrent ? "0 4px 24px rgba(0,0,0,0.3)" : "none",
                   }}
@@ -103,7 +103,7 @@ export default function OnboardingWizard() {
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      background: isDone ? "rgba(61,224,92,0.12)" : isCurrent ? ACCENT : "rgba(255,255,255,0.06)",
+                      background: isDone ? "rgba(255,184,0,0.12)" : isCurrent ? ACCENT : "rgba(255,255,255,0.06)",
                       color: isDone ? ACCENT : isCurrent ? "#000" : MUTED,
                     }}
                   >
@@ -114,7 +114,7 @@ export default function OnboardingWizard() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>STEP {i + 1}</span>
                       {isDone && (
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(61,224,92,0.12)", color: ACCENT }}>DONE</span>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(255,184,0,0.12)", color: ACCENT }}>DONE</span>
                       )}
                     </div>
                     <p className="text-sm font-bold text-white">{step.label}</p>
@@ -145,7 +145,7 @@ export default function OnboardingWizard() {
           </div>
 
           {allDone && (
-            <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(61,224,92,0.06)", border: "1px solid rgba(61,224,92,0.15)" }}>
+            <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}>
               <PartyPopper className="mx-auto mb-2" style={{ color: ACCENT }} size={28} />
               <p className="text-sm font-bold text-white">You&apos;re all set!</p>
               <p className="text-xs mt-1" style={{ color: MUTED }}>Your app is ready to go.</p>
@@ -161,7 +161,7 @@ export default function OnboardingWizard() {
               disabled={finishing}
               className="px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50"
               style={allDone
-                ? { background: ACCENT, color: "#000", boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }
+                ? { background: ACCENT, color: "#000", boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }
                 : { border: `1px solid ${BORDER}`, color: MUTED }
               }
             >

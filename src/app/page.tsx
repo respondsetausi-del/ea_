@@ -12,7 +12,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 
 export default function Home() {
   return (
@@ -24,14 +24,14 @@ export default function Home() {
           background: "rgba(13,17,23,0.88)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderColor: "rgba(61,224,92,0.15)",
+          borderColor: "rgba(255,184,0,0.15)",
         }}
       >
         <div className="max-w-[1100px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-              style={{ background: "rgba(61,224,92,0.15)", color: ACCENT }}
+              style={{ background: "rgba(255,184,0,0.15)", color: ACCENT }}
             >
               EA
             </div>
@@ -45,8 +45,8 @@ export default function Home() {
               className="px-[18px] py-2 rounded-xl text-[13px] font-bold border transition-colors"
               style={{
                 color: ACCENT,
-                borderColor: "rgba(61,224,92,0.25)",
-                background: "rgba(61,224,92,0.08)",
+                borderColor: "rgba(255,184,0,0.25)",
+                background: "rgba(255,184,0,0.08)",
               }}
             >
               Sign In
@@ -56,7 +56,7 @@ export default function Home() {
               className="px-5 py-2 rounded-xl text-[13px] font-extrabold text-black transition-all"
               style={{
                 background: ACCENT,
-                boxShadow: `0 4px 16px 0px rgba(61,224,92,0.3)`,
+                boxShadow: `0 4px 16px 0px rgba(255,184,0,0.3)`,
               }}
             >
               Get Started
@@ -70,15 +70,15 @@ export default function Home() {
         className="pt-[140px] pb-20 px-6 flex flex-col items-center"
         style={{
           background:
-            "radial-gradient(ellipse at top, rgba(61,224,92,0.08) 0%, transparent 60%)",
+            "radial-gradient(ellipse at top, rgba(255,184,0,0.08) 0%, transparent 60%)",
         }}
       >
         <div
           className="px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-[2px] mb-5 border"
           style={{
             color: ACCENT,
-            background: "rgba(61,224,92,0.12)",
-            borderColor: "rgba(61,224,92,0.25)",
+            background: "rgba(255,184,0,0.12)",
+            borderColor: "rgba(255,184,0,0.25)",
           }}
         >
           100% FREE
@@ -102,7 +102,7 @@ export default function Home() {
             className="flex items-center gap-2 px-7 py-3.5 rounded-[14px] text-[15px] font-extrabold text-black transition-all"
             style={{
               background: ACCENT,
-              boxShadow: "0 4px 20px 0px rgba(61,224,92,0.4)",
+              boxShadow: "0 4px 20px 0px rgba(255,184,0,0.4)",
             }}
           >
             <Zap size={18} />
@@ -113,8 +113,8 @@ export default function Home() {
             className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
             style={{
               color: ACCENT,
-              borderColor: "rgba(61,224,92,0.3)",
-              background: "rgba(61,224,92,0.06)",
+              borderColor: "rgba(255,184,0,0.3)",
+              background: "rgba(255,184,0,0.06)",
             }}
           >
             <PlayCircle size={18} />
@@ -126,7 +126,7 @@ export default function Home() {
           className="flex items-center gap-6 px-[30px] py-[18px] rounded-2xl border"
           style={{
             background: "rgba(22,27,34,0.8)",
-            borderColor: "rgba(61,224,92,0.1)",
+            borderColor: "rgba(255,184,0,0.1)",
           }}
         >
           <div className="text-center">
@@ -142,7 +142,7 @@ export default function Home() {
           </div>
           <div
             className="w-px h-[30px]"
-            style={{ background: "rgba(61,224,92,0.15)" }}
+            style={{ background: "rgba(255,184,0,0.15)" }}
           />
           <div className="text-center">
             <div className="text-[22px] font-black" style={{ color: ACCENT }}>
@@ -157,7 +157,7 @@ export default function Home() {
           </div>
           <div
             className="w-px h-[30px]"
-            style={{ background: "rgba(61,224,92,0.15)" }}
+            style={{ background: "rgba(255,184,0,0.15)" }}
           />
           <div className="text-center">
             <div className="text-[22px] font-black" style={{ color: ACCENT }}>
@@ -210,13 +210,13 @@ export default function Home() {
               className="rounded-[18px] p-7 border"
               style={{
                 background: "#161B22",
-                borderColor: "rgba(61,224,92,0.08)",
+                borderColor: "rgba(255,184,0,0.08)",
                 boxShadow: "0 4px 20px 0px rgba(0,0,0,0.3)",
               }}
             >
               <div
                 className="w-12 h-12 rounded-[14px] flex items-center justify-center mb-[18px]"
-                style={{ background: "rgba(61,224,92,0.1)" }}
+                style={{ background: "rgba(255,184,0,0.1)" }}
               >
                 <f.icon size={24} style={{ color: ACCENT }} />
               </div>
@@ -263,7 +263,7 @@ export default function Home() {
                 className="w-[52px] h-[52px] rounded-full flex items-center justify-center mb-[18px] text-[22px] font-black text-black"
                 style={{
                   background: ACCENT,
-                  boxShadow: "0 4px 16px 0px rgba(61,224,92,0.25)",
+                  boxShadow: "0 4px 16px 0px rgba(255,184,0,0.25)",
                 }}
               >
                 {s.num}
@@ -322,12 +322,12 @@ export default function Home() {
               className="flex items-start gap-3.5 p-5 rounded-[14px] border"
               style={{
                 background: "#161B22",
-                borderColor: "rgba(61,224,92,0.06)",
+                borderColor: "rgba(255,184,0,0.06)",
               }}
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "rgba(61,224,92,0.1)" }}
+                style={{ background: "rgba(255,184,0,0.1)" }}
               >
                 <item.icon size={20} style={{ color: ACCENT }} />
               </div>
@@ -377,11 +377,11 @@ export default function Home() {
               className="group rounded-[14px] border overflow-hidden"
               style={{
                 background: "#161B22",
-                borderColor: "rgba(61,224,92,0.06)",
+                borderColor: "rgba(255,184,0,0.06)",
               }}
               {...(i === 0 ? { open: true } : {})}
             >
-              <summary className="flex items-center justify-between px-5 py-5 cursor-pointer list-none text-[15px] font-bold hover:text-[#3DE05C] transition-colors [&::-webkit-details-marker]:hidden">
+              <summary className="flex items-center justify-between px-5 py-5 cursor-pointer list-none text-[15px] font-bold hover:text-[#FFB800] transition-colors [&::-webkit-details-marker]:hidden">
                 {faq.q}
                 <ChevronDown
                   size={18}
@@ -407,18 +407,18 @@ export default function Home() {
       <section
         className="py-[60px] px-6 flex justify-center border-y"
         style={{
-          borderColor: "rgba(61,224,92,0.15)",
+          borderColor: "rgba(255,184,0,0.15)",
           background:
-            "linear-gradient(135deg, rgba(61,224,92,0.04) 0%, #0D1117 50%, rgba(61,224,92,0.03) 100%)",
+            "linear-gradient(135deg, rgba(255,184,0,0.04) 0%, #0D1117 50%, rgba(255,184,0,0.03) 100%)",
         }}
       >
         <div
           className="max-w-[620px] w-full rounded-3xl p-12 flex flex-col items-center border"
           style={{
             background: "rgba(22,27,34,0.8)",
-            borderColor: "rgba(61,224,92,0.12)",
+            borderColor: "rgba(255,184,0,0.12)",
             backdropFilter: "blur(20px)",
-            boxShadow: "0 4px 40px 0px rgba(61,224,92,0.08)",
+            boxShadow: "0 4px 40px 0px rgba(255,184,0,0.08)",
           }}
         >
           <p
@@ -445,7 +445,7 @@ export default function Home() {
             className="flex items-center gap-2 px-8 py-4 rounded-2xl text-[16px] font-extrabold text-black transition-all"
             style={{
               background: ACCENT,
-              boxShadow: "0 4px 24px 0px rgba(61,224,92,0.45)",
+              boxShadow: "0 4px 24px 0px rgba(255,184,0,0.45)",
             }}
           >
             <ArrowRight size={18} />
@@ -457,7 +457,7 @@ export default function Home() {
       {/* Footer */}
       <footer
         className="py-10 px-6 border-t"
-        style={{ borderColor: "rgba(61,224,92,0.08)" }}
+        style={{ borderColor: "rgba(255,184,0,0.08)" }}
       >
         <div className="max-w-[1100px] mx-auto flex flex-col items-center">
           <div className="text-center mb-4">

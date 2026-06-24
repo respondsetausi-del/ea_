@@ -5,11 +5,11 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Plus, Trash2, Power, PowerOff, Copy, Check } from "lucide-react";
 import type { EA } from "@/lib/database.types";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 
 export default function EAsPage() {
   const [eas, setEAs] = useState<EA[]>([]);
@@ -91,7 +91,7 @@ export default function EAsPage() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition text-black"
-          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }}
+          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}
         >
           <Plus size={16} />
           New EA
@@ -107,7 +107,7 @@ export default function EAsPage() {
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="e.g. Gold Scalper Pro" required />
             </div>
@@ -116,7 +116,7 @@ export default function EAsPage() {
               <input value={form.license_key} onChange={e => setForm(f => ({ ...f, license_key: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="Unique ID users enter to login" required />
             </div>
@@ -126,7 +126,7 @@ export default function EAsPage() {
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition resize-none h-20"
               style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-              onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+              onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
               onBlur={e => e.target.style.borderColor = BORDER}
               placeholder="Optional description" />
           </div>
@@ -160,7 +160,7 @@ export default function EAsPage() {
             <div key={ea.id} className="rounded-2xl p-5 flex items-center gap-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black"
-                style={{ background: ea.is_active ? "rgba(61,224,92,0.1)" : "rgba(255,255,255,0.05)", color: ea.is_active ? ACCENT : MUTED }}
+                style={{ background: ea.is_active ? "rgba(255,184,0,0.1)" : "rgba(255,255,255,0.05)", color: ea.is_active ? ACCENT : MUTED }}
               >
                 {ea.name.charAt(0)}
               </div>
@@ -170,7 +170,7 @@ export default function EAsPage() {
                   <span
                     className="text-[9px] font-bold px-2 py-0.5 rounded-full"
                     style={{
-                      background: ea.is_active ? "rgba(61,224,92,0.12)" : "rgba(255,255,255,0.06)",
+                      background: ea.is_active ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.06)",
                       color: ea.is_active ? ACCENT : MUTED,
                     }}
                   >

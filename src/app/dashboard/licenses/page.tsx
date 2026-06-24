@@ -5,10 +5,10 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { KeyRound, MailCheck, Send, Loader2, Copy, Check } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 
 type Row = AppUser & { ea_name?: string };
 
@@ -114,7 +114,7 @@ export default function LicensesPage() {
                 <div className="flex items-center gap-4">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: sent ? "rgba(61,224,92,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
+                    style={{ background: sent ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
                   >
                     {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
                   </div>

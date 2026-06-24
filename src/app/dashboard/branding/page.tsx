@@ -5,11 +5,11 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Upload, Save, Image as ImageIcon } from "lucide-react";
 import type { Branding } from "@/lib/database.types";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(61,224,92,0.1)";
+const BORDER = "rgba(255,184,0,0.1)";
 
 const GLOW_PRESETS = [
   "#00BFFF", "#A855F7", "#00FF88", "#FF3366", "#FF6B00",
@@ -126,7 +126,7 @@ export default function BrandingPage() {
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
             placeholder="Your App Name" />
         </div>
@@ -136,7 +136,7 @@ export default function BrandingPage() {
           <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(61,224,92,0.4)"}
+            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
             placeholder="e.g. Fully automated mobile EA" />
         </div>
@@ -221,7 +221,7 @@ export default function BrandingPage() {
 
       <button onClick={handleSave} disabled={saving}
         className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
-        style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(61,224,92,0.3)" }}>
+        style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}>
         <Save size={16} />
         {saving ? "Saving..." : success ? "Saved!" : "Save Branding"}
       </button>

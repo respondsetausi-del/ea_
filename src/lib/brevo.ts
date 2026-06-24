@@ -68,7 +68,7 @@ export async function sendEmail({ to, toName, subject, htmlContent }: SendEmailA
 }
 
 /** Shared brand colors / wrapper for our emails. */
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 
 function emailShell(title: string, bodyHtml: string): string {
   return `
@@ -77,7 +77,7 @@ function emailShell(title: string, bodyHtml: string): string {
       <div style="text-align:center;margin-bottom:28px;">
         <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">FREE ROBOT</span>
       </div>
-      <div style="background:#11161300;background-color:#121814;border:1px solid rgba(61,224,92,0.25);border-radius:18px;padding:32px 28px;">
+      <div style="background:#11161300;background-color:#121814;border:1px solid rgba(255,184,0,0.25);border-radius:18px;padding:32px 28px;">
         <h1 style="margin:0 0 14px;font-size:20px;color:#ffffff;font-weight:800;">${title}</h1>
         ${bodyHtml}
       </div>

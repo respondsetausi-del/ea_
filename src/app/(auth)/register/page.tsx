@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -73,14 +73,14 @@ export default function RegisterPage() {
           className="rounded-2xl border p-8"
           style={{
             background: "#161B22",
-            borderColor: "rgba(61,224,92,0.1)",
+            borderColor: "rgba(255,184,0,0.1)",
             boxShadow: "0 4px 40px rgba(0,0,0,0.4)",
           }}
         >
           <div className="text-center mb-7">
             <div
               className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(61,224,92,0.1)" }}
+              style={{ background: "rgba(255,184,0,0.1)" }}
             >
               <UserPlus size={24} style={{ color: ACCENT }} />
             </div>
@@ -107,13 +107,13 @@ export default function RegisterPage() {
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{
                   background: "rgba(13,17,23,0.8)",
-                  border: "1px solid rgba(61,224,92,0.1)",
+                  border: "1px solid rgba(255,184,0,0.1)",
                 }}
                 onFocus={(e) =>
-                  (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                  (e.target.style.borderColor = "rgba(255,184,0,0.4)")
                 }
                 onBlur={(e) =>
-                  (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                  (e.target.style.borderColor = "rgba(255,184,0,0.1)")
                 }
                 placeholder="John Doe"
                 required
@@ -134,13 +134,13 @@ export default function RegisterPage() {
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{
                   background: "rgba(13,17,23,0.8)",
-                  border: "1px solid rgba(61,224,92,0.1)",
+                  border: "1px solid rgba(255,184,0,0.1)",
                 }}
                 onFocus={(e) =>
-                  (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                  (e.target.style.borderColor = "rgba(255,184,0,0.4)")
                 }
                 onBlur={(e) =>
-                  (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                  (e.target.style.borderColor = "rgba(255,184,0,0.1)")
                 }
                 placeholder="you@example.com"
                 required
@@ -162,13 +162,13 @@ export default function RegisterPage() {
                   className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition pr-12"
                   style={{
                     background: "rgba(13,17,23,0.8)",
-                    border: "1px solid rgba(61,224,92,0.1)",
+                    border: "1px solid rgba(255,184,0,0.1)",
                   }}
                   onFocus={(e) =>
-                    (e.target.style.borderColor = "rgba(61,224,92,0.4)")
+                    (e.target.style.borderColor = "rgba(255,184,0,0.4)")
                   }
                   onBlur={(e) =>
-                    (e.target.style.borderColor = "rgba(61,224,92,0.1)")
+                    (e.target.style.borderColor = "rgba(255,184,0,0.1)")
                   }
                   placeholder="Min 6 characters"
                   minLength={6}
@@ -195,7 +195,7 @@ export default function RegisterPage() {
               className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition disabled:opacity-50 text-black"
               style={{
                 background: ACCENT,
-                boxShadow: "0 4px 16px rgba(61,224,92,0.3)",
+                boxShadow: "0 4px 16px rgba(255,184,0,0.3)",
               }}
             >
               {loading ? "Creating account..." : "Create Account"}

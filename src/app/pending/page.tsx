@@ -6,7 +6,7 @@ import { APPROVAL_MODE } from "@/lib/config";
 import Link from "next/link";
 import { MailCheck, ShieldCheck } from "lucide-react";
 
-const ACCENT = "#3DE05C";
+const ACCENT = "#FFB800";
 
 function PendingInner() {
   const params = useSearchParams();
@@ -55,13 +55,13 @@ function PendingInner() {
           className="rounded-2xl border p-8 text-center"
           style={{
             background: "#161B22",
-            borderColor: "rgba(61,224,92,0.1)",
+            borderColor: "rgba(255,184,0,0.1)",
             boxShadow: "0 4px 40px rgba(0,0,0,0.4)",
           }}
         >
           <div
             className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "rgba(61,224,92,0.1)" }}
+            style={{ background: "rgba(255,184,0,0.1)" }}
           >
             <Icon size={26} style={{ color: ACCENT }} />
           </div>
@@ -116,8 +116,8 @@ function PendingInner() {
                   className="mt-6 w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition disabled:opacity-50 border"
                   style={{
                     color: ACCENT,
-                    borderColor: "rgba(61,224,92,0.25)",
-                    background: "rgba(61,224,92,0.06)",
+                    borderColor: "rgba(255,184,0,0.25)",
+                    background: "rgba(255,184,0,0.06)",
                   }}
                 >
                   {resending ? "Resending..." : "Resend Verification Email"}

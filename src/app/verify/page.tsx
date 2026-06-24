@@ -59,7 +59,7 @@ function VerifyInner() {
       <div className="w-full max-w-sm text-center">
         {status === "loading" && (
           <>
-            <Loader2 className="mx-auto mb-4 animate-spin text-[#3DE05C]" size={40} />
+            <Loader2 className="mx-auto mb-4 animate-spin text-[#FFB800]" size={40} />
             <h1 className="text-xl font-black tracking-wide text-white">Verifying…</h1>
             <p className="text-zinc-500 text-xs mt-2">Confirming your account.</p>
           </>
@@ -67,12 +67,12 @@ function VerifyInner() {
 
         {status === "success" && (
           <>
-            <CheckCircle2 className="mx-auto mb-4 text-[#3DE05C]" size={48} />
+            <CheckCircle2 className="mx-auto mb-4 text-[#FFB800]" size={48} />
             <h1 className="text-2xl font-black tracking-wide text-white">Verified!</h1>
             <p className="text-zinc-400 text-sm mt-2">{message}</p>
             <Link
               href="/login"
-              className="inline-block mt-6 w-full py-3.5 rounded-xl bg-[#3DE05C] text-black font-bold text-sm tracking-wide hover:brightness-110 transition"
+              className="inline-block mt-6 w-full py-3.5 rounded-xl bg-[#FFB800] text-black font-bold text-sm tracking-wide hover:brightness-110 transition"
             >
               Sign In
             </Link>
