@@ -2,29 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { KeyRound, MailCheck, Send, Loader2, Copy, Check } from "lucide-react";
+import { KeyRound, MailCheck, Send, Loader2, Copy, Check, UserPlus } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
 const ACCENT = "#FFB800";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
+const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(255,184,0,0.1)";
 
 type Row = AppUser & { ea_name?: string };
 
 export default function LicensesPage() {
   const [users, setUsers] = useState<Row[]>([]);
+  const [eas, setEAs] = useState<EA[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ email: "", ea_id: "" });
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
 
   const load = async () => {
     if (DEV_MODE) {
+      setEAs([
+        { id: "demo-1", distributor_id: "dev-001", name: "Gold Scalper Pro", description: "", mentor_id: "EA-GX4R-8KNP", is_active: true, created_at: "", updated_at: "" },
+      ] as EA[]);
       setUsers([
         { id: "u1", distributor_id: "dev-001", ea_id: "demo-1", email: "trader1@example.com", is_active: true, license_key: "FR-AB3CD-EF7GH-JK9LM", license_sent_at: "2025-04-02T00:00:00Z", created_at: "2025-03-01T00:00:00Z", last_seen: null, ea_name: "Gold Scalper Pro" },
         { id: "u2", distributor_id: "dev-001", ea_id: "demo-1", email: "trader2@example.com", is_active: true, license_key: null, license_sent_at: null, created_at: "2025-03-10T00:00:00Z", last_seen: null, ea_name: "Gold Scalper Pro" },
-        { id: "u3", distributor_id: "dev-001", ea_id: "demo-1", email: "newuser@example.com", is_active: false, license_key: null, license_sent_at: null, created_at: "2025-04-01T00:00:00Z", last_seen: null, ea_name: "Gold Scalper Pro" },
       ]);
       setLoading(false);
       return;
@@ -36,6 +44,7 @@ export default function LicensesPage() {
       supabase.from("eas").select("*").eq("distributor_id", user.id),
     ]);
     const easData: EA[] = easRes.data || [];
+    setEAs(easData);
     setUsers((usersRes.data || []).map(u => ({ ...u, ea_name: easData.find(e => e.id === u.ea_id)?.name })));
     setLoading(false);
   };
@@ -46,6 +55,70 @@ export default function LicensesPage() {
     await navigator.clipboard.writeText(key);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const addAndGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError("");
+    if (!addForm.ea_id) { setAddError("Select a trading bot"); return; }
+    setAdding(true);
+
+    if (DEV_MODE) {
+      await new Promise(r => setTimeout(r, 600));
+      const newId = `u${Date.now()}`;
+      const eaName = eas.find(ea => ea.id === addForm.ea_id)?.name || "Unknown";
+      setUsers(prev => [
+        { id: newId, distributor_id: "dev-001", ea_id: addForm.ea_id, email: addForm.email, is_active: true, license_key: "FR-XXXXX-XXXXX-XXXXX", license_sent_at: new Date().toISOString(), created_at: new Date().toISOString(), last_seen: null, ea_name: eaName },
+        ...prev,
+      ]);
+      setNotice({ id: newId, msg: `User added & license emailed to ${addForm.email} (demo)`, ok: true });
+      setAddForm({ email: "", ea_id: addForm.ea_id });
+      setShowAdd(false);
+      setAdding(false);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: newUser, error: insertErr } = await supabase.from("app_users").insert({
+      distributor_id: user.id,
+      ea_id: addForm.ea_id,
+      email: addForm.email,
+    }).select("id").single();
+
+    if (insertErr) {
+      setAddError(insertErr.message.includes("duplicate") ? "This user already exists for this EA" : insertErr.message);
+      setAdding(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/v1/generate-license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_user_id: newUser.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNotice({
+          id: newUser.id,
+          msg: data.emailSkipped
+            ? `User added. License saved but email not configured (no Brevo key).`
+            : `User added & license emailed to ${addForm.email}.`,
+          ok: !data.emailSkipped,
+        });
+      } else {
+        setNotice({ id: newUser.id, msg: `User added but license failed: ${data.error || "unknown error"}`, ok: false });
+      }
+    } catch {
+      setNotice({ id: newUser.id, msg: "User added but license email failed. You can resend below.", ok: false });
+    }
+
+    setAddForm({ email: "", ea_id: addForm.ea_id });
+    setShowAdd(false);
+    setAdding(false);
+    await load();
   };
 
   const generate = async (u: Row) => {
@@ -88,12 +161,69 @@ export default function LicensesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-black tracking-wide text-white">Generate License</h2>
-        <p className="text-sm mt-1" style={{ color: MUTED }}>
-          Issue an access key to an invited user. You can copy the key below or email it directly.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black tracking-wide text-white">Generate License</h2>
+          <p className="text-sm mt-1" style={{ color: MUTED }}>Add a user and issue their access key in one step.</p>
+        </div>
+        <button
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition text-black"
+          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}
+        >
+          <UserPlus size={16} />
+          Add User & License
+        </button>
       </div>
+
+      {showAdd && (
+        <form onSubmit={addAndGenerate} className="rounded-2xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+          <h3 className="text-sm font-bold text-white">Add User & Generate License</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>USER EMAIL</label>
+              <input type="email" value={addForm.email} onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+                onBlur={e => e.target.style.borderColor = BORDER}
+                placeholder="user@example.com" required />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>TRADING BOT</label>
+              <select value={addForm.ea_id} onChange={e => setAddForm(f => ({ ...f, ea_id: e.target.value }))}
+                className="w-full rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition"
+                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+                onBlur={e => e.target.style.borderColor = BORDER}>
+                <option value="">Select EA...</option>
+                {eas.map(ea => <option key={ea.id} value={ea.id}>{ea.name} ({ea.mentor_id})</option>)}
+              </select>
+            </div>
+          </div>
+          <p className="text-[10px]" style={{ color: MUTED }}>This will create the user, generate a license key, and email it to them.</p>
+          {addError && <p className="text-red-400 text-xs">{addError}</p>}
+          <div className="flex gap-3">
+            <button type="submit" disabled={adding}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
+              style={{ background: ACCENT }}>
+              {adding ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+              {adding ? "Processing..." : "Add & Send License"}
+            </button>
+            <button type="button" onClick={() => setShowAdd(false)}
+              className="px-6 py-2.5 rounded-xl text-sm font-medium transition"
+              style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {notice && !users.find(u => u.id === notice.id) && (
+        <div className="rounded-xl p-3 text-xs" style={{ background: notice.ok ? "rgba(255,184,0,0.08)" : "rgba(245,158,11,0.08)", color: notice.ok ? ACCENT : "#F59E0B" }}>
+          {notice.msg}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -101,68 +231,71 @@ export default function LicensesPage() {
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-sm" style={{ color: MUTED }}>No invited users yet. Add users first, then issue them a license.</p>
+          <p className="text-sm" style={{ color: MUTED }}>No users yet. Use the button above to add a user and generate their license.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {users.map(u => {
-            const sent = !!u.license_sent_at;
-            const hasKey = !!u.license_key;
-            const busy = sendingId === u.id;
-            return (
-              <div key={u.id} className="rounded-xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: sent ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
-                  >
-                    {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{u.email}</p>
-                    <p className="text-[10px]" style={{ color: MUTED }}>
-                      {u.ea_name || "Unknown bot"}
-                      {sent && <> · Key sent {new Date(u.license_sent_at as string).toLocaleDateString()}</>}
-                    </p>
-                    {notice?.id === u.id && (
-                      <p className={`text-[11px] mt-1 ${notice.ok ? "" : "text-amber-400"}`} style={notice.ok ? { color: ACCENT } : {}}>{notice.msg}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => generate(u)}
-                    disabled={busy}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50"
-                    style={sent
-                      ? { border: `1px solid ${BORDER}`, color: MUTED }
-                      : { background: ACCENT, color: "#000" }
-                    }
-                  >
-                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                    {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
-                  </button>
-                </div>
-                {hasKey && (
-                  <div className="mt-3 ml-13 flex items-center gap-2">
-                    <code
-                      className="flex-1 rounded-lg px-3 py-2 text-xs font-mono tracking-wide select-all"
-                      style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}`, color: ACCENT }}
+        <>
+          <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>EXISTING USERS ({users.length})</p>
+          <div className="space-y-2">
+            {users.map(u => {
+              const sent = !!u.license_sent_at;
+              const hasKey = !!u.license_key;
+              const busy = sendingId === u.id;
+              return (
+                <div key={u.id} className="rounded-xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: sent ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
                     >
-                      {u.license_key}
-                    </code>
+                      {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{u.email}</p>
+                      <p className="text-[10px]" style={{ color: MUTED }}>
+                        {u.ea_name || "Unknown bot"}
+                        {sent && <> · Key sent {new Date(u.license_sent_at as string).toLocaleDateString()}</>}
+                      </p>
+                      {notice?.id === u.id && (
+                        <p className={`text-[11px] mt-1 ${notice.ok ? "" : "text-amber-400"}`} style={notice.ok ? { color: ACCENT } : {}}>{notice.msg}</p>
+                      )}
+                    </div>
                     <button
-                      onClick={() => copyKey(u.id, u.license_key!)}
-                      className="shrink-0 p-2 rounded-lg transition"
-                      style={{ border: `1px solid ${BORDER}`, color: MUTED }}
-                      title="Copy key"
+                      onClick={() => generate(u)}
+                      disabled={busy}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50"
+                      style={sent
+                        ? { border: `1px solid ${BORDER}`, color: MUTED }
+                        : { background: ACCENT, color: "#000" }
+                      }
                     >
-                      {copiedId === u.id ? <Check size={14} style={{ color: ACCENT }} /> : <Copy size={14} />}
+                      {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                      {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
                     </button>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  {hasKey && (
+                    <div className="mt-3 ml-13 flex items-center gap-2">
+                      <code
+                        className="flex-1 rounded-lg px-3 py-2 text-xs font-mono tracking-wide select-all"
+                        style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}`, color: ACCENT }}
+                      >
+                        {u.license_key}
+                      </code>
+                      <button
+                        onClick={() => copyKey(u.id, u.license_key!)}
+                        className="shrink-0 p-2 rounded-lg transition"
+                        style={{ border: `1px solid ${BORDER}`, color: MUTED }}
+                        title="Copy key"
+                      >
+                        {copiedId === u.id ? <Check size={14} style={{ color: ACCENT }} /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

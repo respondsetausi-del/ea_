@@ -11,11 +11,20 @@ const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(255,184,0,0.1)";
 
+function generateEAId(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let id = "EA-";
+  for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  id += "-";
+  for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
 export default function EAsPage() {
   const [eas, setEAs] = useState<EA[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", license_key: "" });
+  const [form, setForm] = useState({ name: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
@@ -23,8 +32,8 @@ export default function EAsPage() {
   const load = async () => {
     if (DEV_MODE) {
       setEAs([
-        { id: 'demo-1', distributor_id: 'dev-001', name: 'Gold Scalper Pro', description: 'Automated gold scalping strategy', mentor_id: 'GOLD-2024', is_active: true, created_at: '2025-01-15T00:00:00Z', updated_at: '2025-01-15T00:00:00Z' },
-        { id: 'demo-2', distributor_id: 'dev-001', name: 'Forex Hunter', description: 'Multi-pair swing trading bot', mentor_id: 'FX-HUNT-01', is_active: false, created_at: '2025-02-01T00:00:00Z', updated_at: '2025-02-01T00:00:00Z' },
+        { id: 'demo-1', distributor_id: 'dev-001', name: 'Gold Scalper Pro', description: 'Automated gold scalping strategy', mentor_id: 'EA-GX4R-8KNP', is_active: true, created_at: '2025-01-15T00:00:00Z', updated_at: '2025-01-15T00:00:00Z' },
+        { id: 'demo-2', distributor_id: 'dev-001', name: 'Forex Hunter', description: 'Multi-pair swing trading bot', mentor_id: 'EA-LM7W-Q2FT', is_active: false, created_at: '2025-02-01T00:00:00Z', updated_at: '2025-02-01T00:00:00Z' },
       ] as EA[]);
       setLoading(false);
       return;
@@ -45,20 +54,28 @@ export default function EAsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("eas").insert({
-      distributor_id: user.id,
-      name: form.name,
-      description: form.description || null,
-      mentor_id: form.license_key,
-    });
+    let mentorId = generateEAId();
+    let retries = 0;
+    while (retries < 5) {
+      const { error } = await supabase.from("eas").insert({
+        distributor_id: user.id,
+        name: form.name,
+        description: form.description || null,
+        mentor_id: mentorId,
+      });
 
-    if (error) {
-      setError(error.message.includes("duplicate") ? "EA ID already exists" : error.message);
+      if (!error) break;
+      if (error.message.includes("duplicate")) {
+        mentorId = generateEAId();
+        retries++;
+        continue;
+      }
+      setError(error.message);
       setSaving(false);
       return;
     }
 
-    setForm({ name: "", description: "", license_key: "" });
+    setForm({ name: "", description: "" });
     setShowForm(false);
     setSaving(false);
     load();
@@ -86,7 +103,7 @@ export default function EAsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black tracking-wide text-white">Trading Bots</h2>
-          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs. Each EA has a unique EA ID for user access.</p>
+          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs. Each bot gets an auto-generated EA ID.</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -101,25 +118,14 @@ export default function EAsPage() {
       {showForm && (
         <form onSubmit={handleCreate} className="rounded-2xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           <h3 className="text-sm font-bold text-white">Create New EA</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA NAME</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
-                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
-                onBlur={e => e.target.style.borderColor = BORDER}
-                placeholder="e.g. Gold Scalper Pro" required />
-            </div>
-            <div>
-              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA ID</label>
-              <input value={form.license_key} onChange={e => setForm(f => ({ ...f, license_key: e.target.value }))}
-                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
-                style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
-                onBlur={e => e.target.style.borderColor = BORDER}
-                placeholder="Unique ID users enter to login" required />
-            </div>
+          <div>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA NAME</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+              onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+              onBlur={e => e.target.style.borderColor = BORDER}
+              placeholder="e.g. Gold Scalper Pro" required />
           </div>
           <div>
             <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>DESCRIPTION</label>
@@ -130,6 +136,7 @@ export default function EAsPage() {
               onBlur={e => e.target.style.borderColor = BORDER}
               placeholder="Optional description" />
           </div>
+          <p className="text-[10px]" style={{ color: MUTED }}>EA ID will be auto-generated (e.g. EA-GX4R-8KNP)</p>
           {error && <p className="text-red-400 text-xs">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
