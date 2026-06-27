@@ -106,7 +106,7 @@ export default function Home() {
             }}
           >
             <Zap size={18} />
-            Start Trading Free
+            Host Your EA
           </Link>
           <Link
             href="/login"
@@ -120,6 +120,20 @@ export default function Home() {
             <PlayCircle size={18} />
             See How It Works
           </Link>
+          <a
+            href="https://free-app-zw10.onrender.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
+            style={{
+              color: ACCENT,
+              borderColor: "rgba(255,184,0,0.3)",
+              background: "rgba(255,184,0,0.06)",
+            }}
+          >
+            <Smartphone size={18} />
+            iOS Version
+          </a>
         </div>
         {/* Stats bar */}
         <div

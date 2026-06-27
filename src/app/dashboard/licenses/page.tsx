@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { KeyRound, MailCheck, Send, Loader2, Copy, Check, UserPlus } from "lucide-react";
+import { KeyRound, MailCheck, Send, Loader2, UserPlus } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
 const ACCENT = "#FFB800";
@@ -19,7 +19,6 @@ export default function LicensesPage() {
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({ email: "", ea_id: "" });
   const [adding, setAdding] = useState(false);
@@ -50,12 +49,6 @@ export default function LicensesPage() {
   };
 
   useEffect(() => { load(); }, []);
-
-  const copyKey = async (id: string, key: string) => {
-    await navigator.clipboard.writeText(key);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   const addAndGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,7 +232,6 @@ export default function LicensesPage() {
           <div className="space-y-2">
             {users.map(u => {
               const sent = !!u.license_sent_at;
-              const hasKey = !!u.license_key;
               const busy = sendingId === u.id;
               return (
                 <div key={u.id} className="rounded-xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
@@ -273,24 +265,6 @@ export default function LicensesPage() {
                       {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
                     </button>
                   </div>
-                  {hasKey && (
-                    <div className="mt-3 ml-13 flex items-center gap-2">
-                      <code
-                        className="flex-1 rounded-lg px-3 py-2 text-xs font-mono tracking-wide select-all"
-                        style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}`, color: ACCENT }}
-                      >
-                        {u.license_key}
-                      </code>
-                      <button
-                        onClick={() => copyKey(u.id, u.license_key!)}
-                        className="shrink-0 p-2 rounded-lg transition"
-                        style={{ border: `1px solid ${BORDER}`, color: MUTED }}
-                        title="Copy key"
-                      >
-                        {copiedId === u.id ? <Check size={14} style={{ color: ACCENT }} /> : <Copy size={14} />}
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
