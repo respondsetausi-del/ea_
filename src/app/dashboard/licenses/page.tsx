@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { KeyRound, MailCheck, Send, Loader2, UserPlus } from "lucide-react";
+import { KeyRound, MailCheck, Send, Loader2, UserPlus, Copy, Check, Eye } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
+import { isSuperAdminEmailClient } from "@/lib/admin-client";
 
 const ACCENT = "#FFB800";
 const CARD = "#161B22";
@@ -23,8 +24,19 @@ export default function LicensesPage() {
   const [addForm, setAddForm] = useState({ email: "", ea_id: "" });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
+  const [callerEmail, setCallerEmail] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [revealedKeys, setRevealedKeys] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const load = async () => {
+    if (!callerEmail) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setCallerEmail(user.email);
+        setIsSuperAdmin(isSuperAdminEmailClient(user.email));
+      }
+    }
     if (DEV_MODE) {
       setEAs([
         { id: "demo-1", distributor_id: "dev-001", name: "Gold Scalper Pro", description: "", mentor_id: "EA-GX4R-8KNP", is_active: true, created_at: "", updated_at: "" },
@@ -90,15 +102,20 @@ export default function LicensesPage() {
       const res = await fetch("/api/v1/generate-license", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_user_id: newUser.id }),
+        body: JSON.stringify({ app_user_id: newUser.id, caller_email: callerEmail }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        if (data.license_key) {
+          setRevealedKeys(prev => ({ ...prev, [newUser.id]: data.license_key }));
+        }
         setNotice({
           id: newUser.id,
-          msg: data.emailSkipped
-            ? `User added. License saved but email not configured (no Brevo key).`
-            : `User added & license emailed to ${addForm.email}.`,
+          msg: data.license_key
+            ? `User added. License generated.`
+            : data.emailSkipped
+              ? `User added. License saved but email not configured (no Brevo key).`
+              : `User added & license emailed to ${addForm.email}.`,
           ok: !data.emailSkipped,
         });
       } else {
@@ -130,15 +147,20 @@ export default function LicensesPage() {
       const res = await fetch("/api/v1/generate-license", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_user_id: u.id }),
+        body: JSON.stringify({ app_user_id: u.id, caller_email: callerEmail }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        if (data.license_key) {
+          setRevealedKeys(prev => ({ ...prev, [u.id]: data.license_key }));
+        }
         setNotice({
           id: u.id,
-          msg: data.emailSkipped
-            ? "License saved, but email is not configured yet (no Brevo key)."
-            : `License emailed to ${u.email}.`,
+          msg: data.license_key
+            ? `Fresh license generated for ${u.email}.`
+            : data.emailSkipped
+              ? "License saved, but email is not configured yet (no Brevo key)."
+              : `Fresh license emailed to ${u.email}.`,
           ok: !data.emailSkipped,
         });
         await load();
@@ -250,6 +272,24 @@ export default function LicensesPage() {
                       </p>
                       {notice?.id === u.id && (
                         <p className={`text-[11px] mt-1 ${notice.ok ? "" : "text-amber-400"}`} style={notice.ok ? { color: ACCENT } : {}}>{notice.msg}</p>
+                      )}
+                      {revealedKeys[u.id] && (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <code className="text-xs font-mono px-2 py-1 rounded-lg" style={{ background: "rgba(255,184,0,0.08)", color: ACCENT, border: `1px solid ${BORDER}` }}>
+                            {revealedKeys[u.id]}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(revealedKeys[u.id]);
+                              setCopiedId(u.id);
+                              setTimeout(() => setCopiedId(null), 2000);
+                            }}
+                            className="p-1 rounded-md transition"
+                            style={{ color: copiedId === u.id ? "#22c55e" : MUTED }}
+                          >
+                            {copiedId === u.id ? <Check size={13} /> : <Copy size={13} />}
+                          </button>
+                        </div>
                       )}
                     </div>
                     <button

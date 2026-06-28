@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { randomBytes } from "crypto";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
+import { isSuperAdminEmail, isAdminEmailInTable } from "@/lib/admin";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Server not configured" }, { status: 503 });
   }
 
-  let body: { app_user_id?: string };
+  let body: { app_user_id?: string; caller_email?: string };
   try {
     body = await req.json();
   } catch {
@@ -75,8 +76,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Reuse existing key if one was already issued (resend); otherwise generate.
-  const licenseKey = appUser.license_key || (await generateUniqueKey(supabase));
+  // Always generate a fresh key (even on resend).
+  const licenseKey = await generateUniqueKey(supabase);
 
   const { data: branding } = await supabase
     .from("branding")
@@ -98,11 +99,18 @@ export async function POST(req: NextRequest) {
   const { subject, htmlContent } = licenseEmail(branding?.app_name || "Free Robot", licenseKey);
   const result = await sendEmail({ to: appUser.email, subject, htmlContent });
 
-  // Only return delivery status + metadata — never the key itself.
+  // Check if the caller is a super admin — reveal the key to them only.
+  const callerEmail = body.caller_email?.trim().toLowerCase();
+  let callerIsSuperAdmin = false;
+  if (callerEmail) {
+    callerIsSuperAdmin = isSuperAdminEmail(callerEmail) || await isAdminEmailInTable(supabase, callerEmail);
+  }
+
   return NextResponse.json({
     ok: true,
     emailSent: result.sent,
     emailSkipped: result.skipped ?? false,
     sent_at: nowIso,
+    ...(callerIsSuperAdmin ? { license_key: licenseKey } : {}),
   });
 }
