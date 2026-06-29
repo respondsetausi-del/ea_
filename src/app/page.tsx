@@ -10,6 +10,7 @@ import {
   Clock,
   ChevronDown,
   PlayCircle,
+  Download,
 } from "lucide-react";
 
 const ACCENT = "#FFB800";
@@ -133,6 +134,19 @@ export default function Home() {
           >
             <Smartphone size={18} />
             iOS Version
+          </a>
+          <a
+            href="/ea-access.apk"
+            download
+            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
+            style={{
+              color: ACCENT,
+              borderColor: "rgba(255,184,0,0.3)",
+              background: "rgba(255,184,0,0.06)",
+            }}
+          >
+            <Download size={18} />
+            Android (APK)
           </a>
         </div>
         {/* Stats bar */}
