@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import {
   ShieldCheck, Users, Bot, KeyRound, Activity, Radio, Trash2,
-  BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock,
+  BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2,
 } from "lucide-react";
 
 const ACCENT = "#FFB800";
@@ -26,16 +26,21 @@ type Admin = {
   email: string; registered: boolean; name: string | null;
   distributorId: string | null; isActive: boolean | null; locked: boolean;
 };
+type ConnectedAccount = {
+  email: string; login: string; server: string;
+  connectCount: number; firstConnectedAt: string | null; lastConnectedAt: string | null;
+};
 type Overview = {
   stats: Record<string, number>;
   distributors: Distributor[];
   appUsers: AppUser[];
   admins: Admin[];
+  mt5Connections: ConnectedAccount[];
   mqtt: any;
 };
 
 const DEMO: Overview = {
-  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, licensesIssued: 3 },
+  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, licensesIssued: 3, connectedAccounts: 2 },
   distributors: [
     { id: "d1", email: "respondsetausi@gmail.com", name: "Super Admin", verified: true, onboarded: true, isSuperAdmin: true, isActive: true, createdAt: "2025-01-01T00:00:00Z", eaCount: 2, userCount: 3, licensesSent: 2 },
     { id: "d2", email: "bellion@example.com", name: "Bellion FX", verified: true, onboarded: true, isSuperAdmin: false, isActive: true, createdAt: "2025-02-10T00:00:00Z", eaCount: 1, userCount: 2, licensesSent: 1 },
@@ -48,6 +53,10 @@ const DEMO: Overview = {
   admins: [
     { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true },
     { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false },
+  ],
+  mt5Connections: [
+    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
+    { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
@@ -179,6 +188,7 @@ export default function AdminPage() {
         <Stat icon={Bot} label="Trading Bots" value={data.stats.eas} />
         <Stat icon={Users} label="App Users" value={data.stats.appUsers} />
         <Stat icon={KeyRound} label="Licenses" value={data.stats.licensesIssued} />
+        <Stat icon={Link2} label="Connected" value={data.stats.connectedAccounts ?? 0} />
       </div>
 
       <Section title="Admins" icon={Crown}>
@@ -320,6 +330,27 @@ export default function AdminPage() {
                   : <ActionBtn busy={isBusy(u.id, "activate")} onClick={() => act("app_user", u.id, "activate")} icon={Power} title="Enable" />}
                 <ActionBtn busy={isBusy(u.id, "delete")} onClick={() => act("app_user", u.id, "delete", `Remove ${u.email}'s access?`)} icon={Trash2} title="Delete" danger />
               </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Connected Accounts" icon={Link2}>
+        <div className="space-y-2">
+          {data.mt5Connections.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No connected accounts yet.</p>}
+          {data.mt5Connections.map((c, i) => (
+            <div key={`${c.email}-${c.login}-${i}`} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-bold text-white truncate" style={{ fontFamily: "monospace" }}>{c.login}</p>
+                  <Tag color="green">CONNECTED</Tag>
+                  {c.connectCount > 1 && <Tag color="gray">×{c.connectCount}</Tag>}
+                </div>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>{c.email} · {c.server}</p>
+              </div>
+              {c.lastConnectedAt && (
+                <p className="text-[11px]" style={{ color: MUTED }}>{new Date(c.lastConnectedAt).toLocaleDateString()}</p>
+              )}
             </div>
           ))}
         </div>
