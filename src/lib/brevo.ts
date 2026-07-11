@@ -97,6 +97,52 @@ function ctaButton(href: string, label: string): string {
     </div>`;
 }
 
+/**
+ * Reusable Quick Server promotional banner (doc item 1). Drop into any email
+ * body with `${quickServerBanner()}`. The destination is configurable via the
+ * QUICK_SERVER_URL env var so the link can change without a code edit.
+ */
+export function quickServerBanner(): string {
+  const url = process.env.QUICK_SERVER_URL || "https://free-app-site.vercel.app";
+  return `
+    <div style="margin:24px 0 4px;background:linear-gradient(135deg,#1c2416,#121814);border:1px solid rgba(255,184,0,0.3);border-radius:16px;padding:22px 20px;text-align:center;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:${ACCENT};text-transform:uppercase;margin-bottom:8px;">Quick Server</div>
+      <div style="font-size:17px;font-weight:800;color:#ffffff;margin:0 0 8px;">Power Your Trading with Quick Server</div>
+      <p style="font-size:13px;color:#c7cdd0;line-height:20px;margin:0 0 16px;">
+        Experience fast execution, reliable connectivity, and an optimized trading environment designed for automated trading.
+      </p>
+      <a href="${url}" style="display:inline-block;background:${ACCENT};color:#03210c;text-decoration:none;font-weight:800;font-size:14px;padding:12px 28px;border-radius:10px;">
+        Connect to Quick Server
+      </a>
+    </div>`;
+}
+
+/**
+ * New-user welcome email (doc item 1). Sent immediately after a distributor
+ * registers a new app user. Includes login instructions, a support prompt and
+ * the Quick Server banner. It deliberately does NOT contain the access key —
+ * that ships separately in the license email.
+ */
+export function welcomeEmail(appName: string, loginUrl?: string): { subject: string; htmlContent: string } {
+  const app = appName || "EA Access";
+  const subject = `Welcome to ${app} 🎉`;
+  const htmlContent = emailShell(
+    `Welcome to ${app}`,
+    `
+    <p style="color:#c7cdd0;font-size:14px;line-height:22px;margin:0 0 12px;">
+      Your ${app} account has been registered &mdash; you're all set to start automated trading from your phone.
+    </p>
+    <p style="color:#c7cdd0;font-size:14px;line-height:22px;margin:0 0 4px;">
+      <b style="color:#ffffff;">How to log in:</b> open the ${app} app, enter this email address, then enter the access key we send you in a separate email.
+    </p>
+    <p style="color:#8a8f92;font-size:13px;line-height:20px;margin:12px 0 0;">
+      Need a hand? Just reply to this email and our support team will help.
+    </p>
+    ${quickServerBanner()}${loginUrl ? ctaButton(loginUrl, `Open ${app}`) : ""}`
+  );
+  return { subject, htmlContent };
+}
+
 export function verificationEmail(name: string, verifyUrl: string): { subject: string; htmlContent: string } {
   const subject = "Verify your Free Robot distributor account";
   const htmlContent = emailShell(
@@ -133,7 +179,8 @@ export function licenseEmail(appName: string, licenseKey: string): { subject: st
     </div>
     <p style="color:#8a8f92;font-size:12px;line-height:18px;margin:0;">
       Keep this key private — it's tied to your email and grants access to your bot. If you didn't request this, you can ignore this email.
-    </p>`
+    </p>
+    ${quickServerBanner()}`
   );
   return { subject, htmlContent };
 }

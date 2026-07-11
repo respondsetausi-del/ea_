@@ -98,6 +98,13 @@ export default function LicensesPage() {
       return;
     }
 
+    // Fire-and-forget welcome email (doc item 1) — never blocks the license flow.
+    fetch("/api/v1/welcome-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_user_id: newUser.id }),
+    }).catch(() => {});
+
     try {
       const res = await fetch("/api/v1/generate-license", {
         method: "POST",

@@ -64,16 +64,25 @@ export default function UsersPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("app_users").insert({
+    const { data: newUser, error } = await supabase.from("app_users").insert({
       distributor_id: user.id,
       ea_id: form.ea_id,
       email: form.email,
-    });
+    }).select("id").single();
 
     if (error) {
       setError(error.message.includes("duplicate") ? "User already exists for this EA" : error.message);
       setSaving(false);
       return;
+    }
+
+    // Fire-and-forget welcome email (doc item 1).
+    if (newUser?.id) {
+      fetch("/api/v1/welcome-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_user_id: newUser.id }),
+      }).catch(() => {});
     }
 
     setForm({ email: "", ea_id: form.ea_id });
