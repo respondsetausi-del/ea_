@@ -13,6 +13,16 @@ const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(255,184,0,0.1)";
 
+// Friendly display names for the app that reported a connected account. The raw
+// tag comes from each app's reportMT5Connection() call; "free-app" is the
+// EA Access product. Unknown tags fall back to the raw value.
+const APP_LABELS: Record<string, string> = {
+  "free-app": "EA Access",
+  "ea-converter": "EA Converter",
+  "tradeport": "Tradeport",
+};
+const appLabel = (app: string) => APP_LABELS[app] || app;
+
 type Distributor = {
   id: string; email: string; name: string; verified: boolean; onboarded: boolean;
   isSuperAdmin: boolean; isActive: boolean; createdAt: string;
@@ -27,7 +37,7 @@ type Admin = {
   distributorId: string | null; isActive: boolean | null; locked: boolean;
 };
 type ConnectedAccount = {
-  email: string; login: string; server: string;
+  email: string; login: string; server: string; app: string;
   connectCount: number; firstConnectedAt: string | null; lastConnectedAt: string | null;
 };
 type Overview = {
@@ -55,8 +65,8 @@ const DEMO: Overview = {
     { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false },
   ],
   mt5Connections: [
-    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
-    { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
+    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
+    { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
@@ -336,24 +346,34 @@ export default function AdminPage() {
       </Section>
 
       <Section title="Connected Accounts" icon={Link2}>
-        <div className="space-y-2">
-          {data.mt5Connections.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No connected accounts yet.</p>}
-          {data.mt5Connections.map((c, i) => (
-            <div key={`${c.email}-${c.login}-${i}`} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-bold text-white truncate" style={{ fontFamily: "monospace" }}>{c.login}</p>
-                  <Tag color="green">CONNECTED</Tag>
-                  {c.connectCount > 1 && <Tag color="gray">×{c.connectCount}</Tag>}
-                </div>
-                <p className="text-[11px] truncate" style={{ color: MUTED }}>{c.email} · {c.server}</p>
-              </div>
-              {c.lastConnectedAt && (
-                <p className="text-[11px]" style={{ color: MUTED }}>{new Date(c.lastConnectedAt).toLocaleDateString()}</p>
-              )}
+        {data.mt5Connections.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No connected accounts yet.</p>}
+        {Object.entries(
+          data.mt5Connections.reduce((acc, c) => { (acc[c.app || "free-app"] ||= []).push(c); return acc; }, {} as Record<string, ConnectedAccount[]>)
+        ).sort((a, b) => a[0].localeCompare(b[0])).map(([app, list]) => (
+          <div key={app} className="mb-4 last:mb-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded" style={{ background: "rgba(255,184,0,0.12)", color: ACCENT }}>{appLabel(app)}</span>
+              <span className="text-[11px]" style={{ color: MUTED }}>{list.length} account{list.length === 1 ? "" : "s"}</span>
             </div>
-          ))}
-        </div>
+            <div className="space-y-2">
+              {list.map((c, i) => (
+                <div key={`${c.email}-${c.login}-${i}`} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold text-white truncate" style={{ fontFamily: "monospace" }}>{c.login}</p>
+                      <Tag color="green">CONNECTED</Tag>
+                      {c.connectCount > 1 && <Tag color="gray">×{c.connectCount}</Tag>}
+                    </div>
+                    <p className="text-[11px] truncate" style={{ color: MUTED }}>{c.email} · {c.server}</p>
+                  </div>
+                  {c.lastConnectedAt && (
+                    <p className="text-[11px]" style={{ color: MUTED }}>{new Date(c.lastConnectedAt).toLocaleDateString()}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </Section>
     </div>
   );

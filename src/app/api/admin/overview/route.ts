@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     supabase.from("admin_emails").select("email, created_at").order("created_at", { ascending: true }),
     // Connected MT5 accounts — login NUMBER + server only, never the password.
     supabase.from("mt5_connections")
-      .select("email, login, server, connect_count, first_connected_at, last_connected_at")
+      .select("email, login, server, app, connect_count, first_connected_at, last_connected_at")
       .order("last_connected_at", { ascending: false }),
   ]);
 
@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
     email: c.email,
     login: c.login,
     server: c.server,
+    app: c.app || "free-app",
     connectCount: c.connect_count,
     firstConnectedAt: c.first_connected_at,
     lastConnectedAt: c.last_connected_at,

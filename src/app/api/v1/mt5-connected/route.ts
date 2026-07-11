@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Server not configured" }, { status: 503 });
   }
 
-  let body: { email?: string; login?: string; server?: string };
+  let body: { email?: string; login?: string; server?: string; app?: string };
   try {
     body = await req.json();
   } catch {
@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
   const email = body.email?.trim().toLowerCase();
   const login = body.login?.toString().trim();
   const server = body.server?.trim();
+  // Which app the connection came from (clean per-app separation). Defaults to
+  // "free-app" for back-compat with older clients that don't send it.
+  const app = (body.app?.toString().trim() || "free-app").toLowerCase();
 
   if (!email || !email.includes("@")) {
     return corsJson({ error: "Valid email is required" }, { status: 400 });
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
     .eq("email", email)
     .eq("login", login)
     .eq("server", server)
+    .eq("app", app)
     .maybeSingle();
 
   if (selectError) {
@@ -84,7 +88,7 @@ export async function POST(req: NextRequest) {
   } else {
     const { error } = await supabase
       .from("mt5_connections")
-      .insert({ email, login, server });
+      .insert({ email, login, server, app });
     if (error) {
       console.error("[mt5-connected] Supabase insert error:", error);
       return corsJson({ error: "Database error" }, { status: 500 });
