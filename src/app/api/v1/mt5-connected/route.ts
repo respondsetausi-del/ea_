@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Server not configured" }, { status: 503 });
   }
 
-  let body: { email?: string; login?: string; server?: string; app?: string };
+  let body: { email?: string; login?: string; server?: string; app?: string; event?: string };
   try {
     body = await req.json();
   } catch {
@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
   // Which app the connection came from (clean per-app separation). Defaults to
   // "free-app" for back-compat with older clients that don't send it.
   const app = (body.app?.toString().trim() || "free-app").toLowerCase();
+  // Connection lifecycle event. "connect" (default) records/refreshes the link;
+  // "heartbeat" keeps it live; "disconnect" marks it offline immediately.
+  const rawEvent = (body.event?.toString().trim() || "connect").toLowerCase();
+  const event = (["connect", "heartbeat", "disconnect"].includes(rawEvent) ? rawEvent : "connect") as
+    "connect" | "heartbeat" | "disconnect";
 
   if (!email || !email.includes("@")) {
     return corsJson({ error: "Valid email is required" }, { status: 400 });
@@ -58,6 +63,8 @@ export async function POST(req: NextRequest) {
   if (!login || !server) {
     return corsJson({ error: "Login and server are required" }, { status: 400 });
   }
+
+  const now = new Date().toISOString();
 
   const { data: existing, error: selectError } = await supabase
     .from("mt5_connections")
@@ -74,21 +81,28 @@ export async function POST(req: NextRequest) {
   }
 
   if (existing) {
-    const { error } = await supabase
-      .from("mt5_connections")
-      .update({
-        last_connected_at: new Date().toISOString(),
-        connect_count: (existing.connect_count ?? 0) + 1,
-      })
-      .eq("id", existing.id);
+    // Build the update per event: disconnect flips status offline; connect
+    // refreshes the link + bumps the count; heartbeat just keeps it live.
+    const update: Record<string, unknown> =
+      event === "disconnect"
+        ? { status: "disconnected", last_heartbeat_at: now }
+        : event === "heartbeat"
+          ? { status: "connected", last_heartbeat_at: now }
+          : { status: "connected", last_heartbeat_at: now, last_connected_at: now, connect_count: (existing.connect_count ?? 0) + 1 };
+
+    const { error } = await supabase.from("mt5_connections").update(update).eq("id", existing.id);
     if (error) {
       console.error("[mt5-connected] Supabase update error:", error);
       return corsJson({ error: "Database error" }, { status: 500 });
     }
+  } else if (event === "disconnect") {
+    // Nothing to disconnect — no-op (don't create a row for a disconnect).
+    return corsJson({ recorded: true });
   } else {
+    // First time we hear about this account (connect or heartbeat) → create it.
     const { error } = await supabase
       .from("mt5_connections")
-      .insert({ email, login, server, app });
+      .insert({ email, login, server, app, status: "connected", last_heartbeat_at: now });
     if (error) {
       console.error("[mt5-connected] Supabase insert error:", error);
       return corsJson({ error: "Database error" }, { status: 500 });

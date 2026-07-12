@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import {
   ShieldCheck, Users, Bot, KeyRound, Activity, Radio, Trash2,
-  BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2,
+  BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2, BarChart3,
 } from "lucide-react";
 
 const ACCENT = "#FFB800";
@@ -38,10 +38,19 @@ type Admin = {
 };
 type ConnectedAccount = {
   email: string; login: string; server: string; app: string;
+  status: string; online: boolean; lastHeartbeatAt: string | null;
   connectCount: number; firstConnectedAt: string | null; lastConnectedAt: string | null;
+};
+type Analytics = {
+  mentors: { total: number; active: number; verified: number; newToday: number; newWeek: number; newMonth: number };
+  users: { total: number; active: number; newToday: number; newWeek: number; newMonth: number; seen24h: number; seen7d: number; seen30d: number };
+  licenses: { total: number; sentToday: number; sentWeek: number; sentMonth: number };
+  bots: { total: number; active: number };
+  connections: { total: number; online: number; offline: number; active24h: number; active7d: number; active30d: number };
 };
 type Overview = {
   stats: Record<string, number>;
+  analytics?: Analytics;
   distributors: Distributor[];
   appUsers: AppUser[];
   admins: Admin[];
@@ -50,7 +59,14 @@ type Overview = {
 };
 
 const DEMO: Overview = {
-  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, licensesIssued: 3, connectedAccounts: 2 },
+  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, licensesIssued: 3, connectedAccounts: 2, onlineAccounts: 1 },
+  analytics: {
+    mentors: { total: 3, active: 2, verified: 2, newToday: 0, newWeek: 1, newMonth: 2 },
+    users: { total: 5, active: 4, newToday: 1, newWeek: 2, newMonth: 4, seen24h: 2, seen7d: 3, seen30d: 4 },
+    licenses: { total: 3, sentToday: 0, sentWeek: 1, sentMonth: 2 },
+    bots: { total: 4, active: 3 },
+    connections: { total: 2, online: 1, offline: 1, active24h: 1, active7d: 2, active30d: 2 },
+  },
   distributors: [
     { id: "d1", email: "respondsetausi@gmail.com", name: "Super Admin", verified: true, onboarded: true, isSuperAdmin: true, isActive: true, createdAt: "2025-01-01T00:00:00Z", eaCount: 2, userCount: 3, licensesSent: 2 },
     { id: "d2", email: "bellion@example.com", name: "Bellion FX", verified: true, onboarded: true, isSuperAdmin: false, isActive: true, createdAt: "2025-02-10T00:00:00Z", eaCount: 1, userCount: 2, licensesSent: 1 },
@@ -65,8 +81,8 @@ const DEMO: Overview = {
     { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false },
   ],
   mt5Connections: [
-    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
-    { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
+    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", status: "connected", online: true, lastHeartbeatAt: "2026-06-20T00:00:00Z", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
+    { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", status: "disconnected", online: false, lastHeartbeatAt: "2026-06-18T00:00:00Z", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
@@ -107,6 +123,13 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Live refresh — keeps the MT5 online/offline status current without a manual
+  // reload (the app heartbeats every ~45s; we re-poll every 15s).
+  useEffect(() => {
+    const t = setInterval(() => { load(); }, 15000);
+    return () => clearInterval(t);
+  }, [load]);
 
   const act = async (type: "distributor" | "app_user", id: string, action: string, confirmMsg?: string) => {
     if (confirmMsg && !confirm(confirmMsg)) return;
@@ -199,7 +222,50 @@ export default function AdminPage() {
         <Stat icon={Users} label="App Users" value={data.stats.appUsers} />
         <Stat icon={KeyRound} label="Licenses" value={data.stats.licensesIssued} />
         <Stat icon={Link2} label="Connected" value={data.stats.connectedAccounts ?? 0} />
+        <Stat icon={Radio} label="Online now" value={data.stats.onlineAccounts ?? 0} />
       </div>
+
+      {data.analytics && (
+        <Section title="Analytics" icon={BarChart3}>
+          <AnalyticsGroup title="App Users" items={[
+            ["Total", data.analytics.users.total],
+            ["Active", data.analytics.users.active],
+            ["New today", data.analytics.users.newToday],
+            ["New this week", data.analytics.users.newWeek],
+            ["New this month", data.analytics.users.newMonth],
+            ["Seen 24h", data.analytics.users.seen24h],
+            ["Seen 7d", data.analytics.users.seen7d],
+            ["Seen 30d", data.analytics.users.seen30d],
+          ]} />
+          <AnalyticsGroup title="Mentors (Distributors)" items={[
+            ["Total", data.analytics.mentors.total],
+            ["Active", data.analytics.mentors.active],
+            ["Verified", data.analytics.mentors.verified],
+            ["New today", data.analytics.mentors.newToday],
+            ["New this week", data.analytics.mentors.newWeek],
+            ["New this month", data.analytics.mentors.newMonth],
+          ]} />
+          <AnalyticsGroup title="Licenses" items={[
+            ["Issued (total)", data.analytics.licenses.total],
+            ["Sent today", data.analytics.licenses.sentToday],
+            ["Sent this week", data.analytics.licenses.sentWeek],
+            ["Sent this month", data.analytics.licenses.sentMonth],
+          ]} />
+          <AnalyticsGroup title="Bots & Connections" items={[
+            ["Hosted bots", data.analytics.bots.total],
+            ["Active bots", data.analytics.bots.active],
+            ["Connected accts", data.analytics.connections.total],
+            ["Online now", data.analytics.connections.online],
+            ["Offline", data.analytics.connections.offline],
+            ["Connected 24h", data.analytics.connections.active24h],
+            ["Connected 7d", data.analytics.connections.active7d],
+            ["Connected 30d", data.analytics.connections.active30d],
+          ]} />
+          <p className="text-[11px] mt-1" style={{ color: MUTED }}>
+            App downloads, website visitors and logins-over-time aren&apos;t shown yet — they need event tracking, which is the next step.
+          </p>
+        </Section>
+      )}
 
       <Section title="Admins" icon={Crown}>
         <form
@@ -361,7 +427,7 @@ export default function AdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-bold text-white truncate" style={{ fontFamily: "monospace" }}>{c.login}</p>
-                      <Tag color="green">CONNECTED</Tag>
+                      <StatusBadge online={c.online} />
                       {c.connectCount > 1 && <Tag color="gray">×{c.connectCount}</Tag>}
                     </div>
                     <p className="text-[11px] truncate" style={{ color: MUTED }}>{c.email} · {c.server}</p>
@@ -385,6 +451,40 @@ function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: n
       <Icon style={{ color: ACCENT }} className="mb-2" size={16} />
       <p className="text-xl font-black text-white">{value ?? 0}</p>
       <p className="text-[10px] font-medium" style={{ color: MUTED }}>{label}</p>
+    </div>
+  );
+}
+
+function StatusBadge({ online }: { online: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded"
+      style={{
+        background: online ? "rgba(34,197,94,0.14)" : "rgba(148,163,184,0.12)",
+        color: online ? "#22C55E" : "#94A3B8",
+      }}
+    >
+      <span
+        className={online ? "animate-pulse" : ""}
+        style={{ width: 6, height: 6, borderRadius: 9999, background: online ? "#22C55E" : "#94A3B8", boxShadow: online ? "0 0 6px #22C55E" : "none", display: "inline-block" }}
+      />
+      {online ? "Online" : "Offline"}
+    </span>
+  );
+}
+
+function AnalyticsGroup({ title, items }: { title: string; items: [string, number][] }) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ACCENT }}>{title}</p>
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        {items.map(([label, value]) => (
+          <div key={label} className="rounded-lg px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+            <p className="text-lg font-black text-white leading-none">{value}</p>
+            <p className="text-[10px] font-medium mt-1" style={{ color: MUTED }}>{label}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

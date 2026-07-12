@@ -36,12 +36,12 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false }),
     supabase.from("eas").select("id, distributor_id, name, mentor_id, is_active"),
     supabase.from("app_users")
-      .select("id, distributor_id, ea_id, email, is_active, license_key, license_sent_at, created_at")
+      .select("id, distributor_id, ea_id, email, is_active, license_key, license_sent_at, created_at, last_seen")
       .order("created_at", { ascending: false }),
     supabase.from("admin_emails").select("email, created_at").order("created_at", { ascending: true }),
     // Connected MT5 accounts — login NUMBER + server only, never the password.
     supabase.from("mt5_connections")
-      .select("email, login, server, app, connect_count, first_connected_at, last_connected_at")
+      .select("email, login, server, app, status, connect_count, first_connected_at, last_connected_at, last_heartbeat_at")
       .order("last_connected_at", { ascending: false }),
   ]);
 
@@ -76,6 +76,16 @@ export async function GET(req: NextRequest) {
     createdAt: u.created_at,
   }));
 
+  // Live status: an account is "online" only if it's marked connected AND its
+  // last heartbeat is fresh (the app pings while its MT5 session is alive), so
+  // a force-killed app naturally drops offline once its heartbeats lapse.
+  const ONLINE_WINDOW_MS = 120_000; // 2 minutes (heartbeat is ~45s)
+  const nowForStatus = Date.now();
+  const isOnline = (c: Record<string, unknown>) =>
+    (c.status ?? "connected") === "connected" &&
+    !!c.last_heartbeat_at &&
+    nowForStatus - new Date(c.last_heartbeat_at as string).getTime() < ONLINE_WINDOW_MS;
+
   // Connected MT5 accounts — the login NUMBER + server the app reported on a
   // successful connect. Passwords are never stored, so none are exposed here.
   const mt5Connections = (mt5Conns || []).map(c => ({
@@ -83,10 +93,73 @@ export async function GET(req: NextRequest) {
     login: c.login,
     server: c.server,
     app: c.app || "free-app",
+    status: c.status || "connected",
+    online: isOnline(c),
     connectCount: c.connect_count,
     firstConnectedAt: c.first_connected_at,
     lastConnectedAt: c.last_connected_at,
+    lastHeartbeatAt: c.last_heartbeat_at,
   }));
+
+  // ── Time-bucketed analytics (doc item 3) ──────────────────────────
+  // Everything here is derivable from existing tables — no event capture
+  // needed. App downloads, website visitors and logins-over-time require
+  // instrumentation (a separate analytics_events table) and are not here yet.
+  const nowMs = Date.now();
+  const DAY = 86_400_000;
+  const startOfToday = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+  const weekAgo = nowMs - 7 * DAY;
+  const monthAgo = nowMs - 30 * DAY;
+  const countSince = (
+    rows: Array<Record<string, unknown>>,
+    get: (r: Record<string, unknown>) => string | null | undefined,
+    from: number,
+    to = Infinity,
+  ) => rows.filter(r => {
+    const v = get(r);
+    if (!v) return false;
+    const t = new Date(v).getTime();
+    return t >= from && t < to;
+  }).length;
+
+  const analytics = {
+    mentors: {
+      total: distributorRows.length,
+      active: distributorRows.filter(d => d.isActive).length,
+      verified: distributorRows.filter(d => d.verified).length,
+      newToday: countSince(distributorRows, d => d.createdAt as string, startOfToday),
+      newWeek: countSince(distributorRows, d => d.createdAt as string, weekAgo),
+      newMonth: countSince(distributorRows, d => d.createdAt as string, monthAgo),
+    },
+    users: {
+      total: usersList.length,
+      active: usersList.filter(u => u.is_active).length,
+      newToday: countSince(usersList, u => u.created_at as string, startOfToday),
+      newWeek: countSince(usersList, u => u.created_at as string, weekAgo),
+      newMonth: countSince(usersList, u => u.created_at as string, monthAgo),
+      seen24h: countSince(usersList, u => u.last_seen as string, nowMs - DAY),
+      seen7d: countSince(usersList, u => u.last_seen as string, weekAgo),
+      seen30d: countSince(usersList, u => u.last_seen as string, monthAgo),
+    },
+    licenses: {
+      total: usersList.filter(u => u.license_key).length,
+      sentToday: countSince(usersList, u => u.license_sent_at as string, startOfToday),
+      sentWeek: countSince(usersList, u => u.license_sent_at as string, weekAgo),
+      sentMonth: countSince(usersList, u => u.license_sent_at as string, monthAgo),
+    },
+    bots: {
+      total: easList.length,
+      active: easList.filter(e => e.is_active).length,
+    },
+    connections: {
+      total: (mt5Conns || []).length,
+      online: (mt5Conns || []).filter(isOnline).length,
+      offline: (mt5Conns || []).length - (mt5Conns || []).filter(isOnline).length,
+      active24h: countSince(mt5Conns || [], c => c.last_connected_at as string, nowMs - DAY),
+      active7d: countSince(mt5Conns || [], c => c.last_connected_at as string, weekAgo),
+      active30d: countSince(mt5Conns || [], c => c.last_connected_at as string, monthAgo),
+    },
+  };
 
   const stats = {
     distributors: distributorRows.length,
@@ -96,6 +169,7 @@ export async function GET(req: NextRequest) {
     appUsers: appUserRows.length,
     licensesIssued: appUserRows.filter(u => u.hasLicense).length,
     connectedAccounts: mt5Connections.length,
+    onlineAccounts: mt5Connections.filter(c => c.online).length,
   };
 
   // ── Admins: registered (flagged distributors) + pending (allowlisted but not yet signed up) ──
@@ -120,5 +194,5 @@ export async function GET(req: NextRequest) {
 
   const mqtt = await fetchMqtt();
 
-  return NextResponse.json({ stats, distributors: distributorRows, appUsers: appUserRows, admins, mt5Connections, mqtt });
+  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, admins, mt5Connections, mqtt });
 }
