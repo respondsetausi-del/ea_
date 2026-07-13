@@ -20,6 +20,7 @@ const APP_LABELS: Record<string, string> = {
   "free-app": "EA Access",
   "ea-converter": "EA Converter",
   "tradeport": "Tradeport",
+  "emc": "EA Mobile Connect",
 };
 const appLabel = (app: string) => APP_LABELS[app] || app;
 
@@ -34,7 +35,7 @@ type AppUser = {
 };
 type Admin = {
   email: string; registered: boolean; name: string | null;
-  distributorId: string | null; isActive: boolean | null; locked: boolean;
+  distributorId: string | null; isActive: boolean | null; locked: boolean; isOwner: boolean;
 };
 type ConnectedAccount = {
   email: string; login: string; server: string; app: string;
@@ -47,6 +48,7 @@ type Analytics = {
   licenses: { total: number; sentToday: number; sentWeek: number; sentMonth: number };
   bots: { total: number; active: number };
   connections: { total: number; online: number; offline: number; active24h: number; active7d: number; active30d: number };
+  traffic: { visitsToday: number; visitsWeek: number; visitsMonth: number; uniqueToday: number; uniqueWeek: number; uniqueMonth: number; returningMonth: number; loginsToday: number; loginsWeek: number; loginsMonth: number };
 };
 type Overview = {
   stats: Record<string, number>;
@@ -66,6 +68,7 @@ const DEMO: Overview = {
     licenses: { total: 3, sentToday: 0, sentWeek: 1, sentMonth: 2 },
     bots: { total: 4, active: 3 },
     connections: { total: 2, online: 1, offline: 1, active24h: 1, active7d: 2, active30d: 2 },
+    traffic: { visitsToday: 42, visitsWeek: 310, visitsMonth: 1180, uniqueToday: 30, uniqueWeek: 190, uniqueMonth: 640, returningMonth: 145, loginsToday: 8, loginsWeek: 44, loginsMonth: 160 },
   },
   distributors: [
     { id: "d1", email: "respondsetausi@gmail.com", name: "Super Admin", verified: true, onboarded: true, isSuperAdmin: true, isActive: true, createdAt: "2025-01-01T00:00:00Z", eaCount: 2, userCount: 3, licensesSent: 2 },
@@ -77,8 +80,9 @@ const DEMO: Overview = {
     { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z" },
   ],
   admins: [
-    { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true },
-    { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false },
+    { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true, isOwner: true },
+    { email: "mentor@example.com", registered: true, name: "Bellion FX", distributorId: "d2", isActive: true, locked: false, isOwner: false },
+    { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false, isOwner: false },
   ],
   mt5Connections: [
     { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", status: "connected", online: true, lastHeartbeatAt: "2026-06-20T00:00:00Z", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
@@ -261,8 +265,21 @@ export default function AdminPage() {
             ["Connected 7d", data.analytics.connections.active7d],
             ["Connected 30d", data.analytics.connections.active30d],
           ]} />
+          <AnalyticsGroup title="Site Traffic" items={[
+            ["Visits today", data.analytics.traffic.visitsToday],
+            ["Visits 7d", data.analytics.traffic.visitsWeek],
+            ["Visits 30d", data.analytics.traffic.visitsMonth],
+            ["Unique today", data.analytics.traffic.uniqueToday],
+            ["Unique 7d", data.analytics.traffic.uniqueWeek],
+            ["Unique 30d", data.analytics.traffic.uniqueMonth],
+            ["Returning 30d", data.analytics.traffic.returningMonth],
+            ["Sign-ups 30d", data.analytics.mentors.newMonth],
+            ["Logins today", data.analytics.traffic.loginsToday],
+            ["Logins 7d", data.analytics.traffic.loginsWeek],
+            ["Logins 30d", data.analytics.traffic.loginsMonth],
+          ]} />
           <p className="text-[11px] mt-1" style={{ color: MUTED }}>
-            App downloads, website visitors and logins-over-time aren&apos;t shown yet — they need event tracking, which is the next step.
+            App downloads aren&apos;t tracked yet — that needs a download event on the APK link. Visits, unique/returning visitors and logins are live.
           </p>
         </Section>
       )}
@@ -300,20 +317,25 @@ export default function AdminPage() {
             <div key={a.email} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: a.registered ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: a.registered ? "#F59E0B" : MUTED }}
+                style={{ background: a.isOwner ? "rgba(255,184,0,0.2)" : a.registered ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: a.isOwner ? ACCENT : a.registered ? "#F59E0B" : MUTED }}
               >
                 {a.registered ? <Crown size={15} /> : <Clock size={15} />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-white truncate">{a.email}</p>
-                  {a.locked && <Tag color="gray">CONFIG</Tag>}
-                  {a.registered ? <Tag color="green">ACTIVE</Tag> : <Tag color="amber">PENDING SIGNUP</Tag>}
+                  {a.isOwner
+                    ? <Tag color="amber">SUPER SUPER ADMIN</Tag>
+                    : a.registered
+                      ? <Tag color="green">SUPER ADMIN</Tag>
+                      : null}
+                  {!a.isOwner && a.locked && <Tag color="gray">CONFIG</Tag>}
+                  {!a.registered && <Tag color="amber">PENDING SIGNUP</Tag>}
                 </div>
                 {a.name && <p className="text-[11px] truncate" style={{ color: MUTED }}>{a.name}</p>}
               </div>
               {a.locked ? (
-                <span title="Set in server config (SUPER_ADMIN_EMAILS)" style={{ color: "rgba(255,255,255,0.15)" }}><Lock size={15} /></span>
+                <span title={a.isOwner ? "Owner (super super admin) — permanent, can't be removed" : "Set in server config (SUPER_ADMIN_EMAILS)"} style={{ color: a.isOwner ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.15)" }}><Lock size={15} /></span>
               ) : (
                 <ActionBtn
                   busy={busy === `admin:${a.email}`}

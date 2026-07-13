@@ -18,7 +18,27 @@ export function superAdminEmails(): string[] {
 
 export function isSuperAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
-  return superAdminEmails().includes(email.toLowerCase());
+  // The owner is always a super admin, even if the SUPER_ADMIN_EMAILS list is
+  // overridden and forgets to include them.
+  return superAdminEmails().includes(email.toLowerCase()) || isOwnerEmail(email);
+}
+
+/**
+ * The Super Super Admin (owner) — the permanent top tier. Exactly this
+ * account (or accounts) can never be removed or demoted by anyone, and is
+ * always a super admin. Configurable via SUPER_SUPER_ADMIN_EMAILS; defaults
+ * to the project owner.
+ */
+export function ownerEmails(): string[] {
+  return (process.env.SUPER_SUPER_ADMIN_EMAILS || "respondsetausi@gmail.com")
+    .split(",")
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isOwnerEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ownerEmails().includes(email.toLowerCase());
 }
 
 /** Check the runtime admin_emails allowlist (service client bypasses RLS). */

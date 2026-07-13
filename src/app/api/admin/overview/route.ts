@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin, superAdminEmails } from "@/lib/admin";
+import { requireSuperAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,41 @@ async function fetchMqtt(): Promise<unknown> {
   }
 }
 
+/** Aggregate site-traffic events into visit / unique / returning / login buckets. */
+function buildTraffic(
+  events: Array<{ event_type: string; visitor_id: string | null; occurred_at: string }>,
+  startOfToday: number,
+  weekAgo: number,
+  monthAgo: number,
+) {
+  const ms = (s: string) => new Date(s).getTime();
+  const visits = events.filter(e => e.event_type === "visit");
+  const logins = events.filter(e => e.event_type === "login");
+  const since = (arr: typeof events, from: number) => arr.filter(e => ms(e.occurred_at) >= from);
+  const uniq = (arr: typeof events) => new Set(arr.map(e => e.visitor_id).filter(Boolean)).size;
+
+  // Returning (month): visitor ids that show up 2+ times in the month window.
+  const monthVisits = since(visits, monthAgo);
+  const counts = new Map<string, number>();
+  for (const e of monthVisits) {
+    if (e.visitor_id) counts.set(e.visitor_id, (counts.get(e.visitor_id) ?? 0) + 1);
+  }
+  const returningMonth = Array.from(counts.values()).filter(n => n >= 2).length;
+
+  return {
+    visitsToday: since(visits, startOfToday).length,
+    visitsWeek: since(visits, weekAgo).length,
+    visitsMonth: monthVisits.length,
+    uniqueToday: uniq(since(visits, startOfToday)),
+    uniqueWeek: uniq(since(visits, weekAgo)),
+    uniqueMonth: uniq(monthVisits),
+    returningMonth,
+    loginsToday: since(logins, startOfToday).length,
+    loginsWeek: since(logins, weekAgo).length,
+    loginsMonth: since(logins, monthAgo).length,
+  };
+}
+
 /**
  * GET /api/admin/overview
  * God-mode snapshot: every distributor (with counts), every app user (with
@@ -30,7 +65,8 @@ export async function GET(req: NextRequest) {
   }
   const supabase = gate.supabase;
 
-  const [{ data: distributors }, { data: eas }, { data: appUsers }, { data: adminEmails }, { data: mt5Conns }] = await Promise.all([
+  const eventsSince = new Date(Date.now() - 31 * 86_400_000).toISOString();
+  const [{ data: distributors }, { data: eas }, { data: appUsers }, { data: adminEmails }, { data: mt5Conns }, { data: events }] = await Promise.all([
     supabase.from("distributors")
       .select("id, email, name, verified, onboarded, is_super_admin, is_active, created_at")
       .order("created_at", { ascending: false }),
@@ -43,6 +79,10 @@ export async function GET(req: NextRequest) {
     supabase.from("mt5_connections")
       .select("email, login, server, app, status, connect_count, first_connected_at, last_connected_at, last_heartbeat_at")
       .order("last_connected_at", { ascending: false }),
+    // Site-traffic events (last 31 days) — visits + logins for the traffic tiles.
+    supabase.from("analytics_events")
+      .select("event_type, visitor_id, occurred_at")
+      .gte("occurred_at", eventsSince),
   ]);
 
   const easList = eas || [];
@@ -159,6 +199,7 @@ export async function GET(req: NextRequest) {
       active7d: countSince(mt5Conns || [], c => c.last_connected_at as string, weekAgo),
       active30d: countSince(mt5Conns || [], c => c.last_connected_at as string, monthAgo),
     },
+    traffic: buildTraffic(events || [], startOfToday, weekAgo, monthAgo),
   };
 
   const stats = {
@@ -178,19 +219,23 @@ export async function GET(req: NextRequest) {
   const listEmails = (adminEmails || []).map(a => a.email.toLowerCase());
   // Union of allowlist emails and any flagged distributor emails.
   const flaggedEmails = (distributors || []).filter(d => d.is_super_admin).map(d => d.email.toLowerCase());
-  const allAdminEmails = Array.from(new Set([...listEmails, ...flaggedEmails]));
+  // Always include the owner(s) so the super super admin is visible even if not
+  // yet registered/flagged.
+  const allAdminEmails = Array.from(new Set([...listEmails, ...flaggedEmails, ...ownerEmails()]));
 
   const admins = allAdminEmails.map(email => {
     const d = distByEmail.get(email);
+    const owner = isOwnerEmail(email);
     return {
       email,
       registered: !!d,
       name: d?.name ?? null,
       distributorId: d?.id ?? null,
       isActive: d ? d.is_active : null,
-      locked: envLocked.has(email), // env-listed admins can't be removed from the UI
+      isOwner: owner, // super super admin — permanent, can't be removed/demoted
+      locked: owner || envLocked.has(email), // owner + env-listed admins can't be removed from the UI
     };
-  }).sort((a, b) => Number(b.registered) - Number(a.registered) || a.email.localeCompare(b.email));
+  }).sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || Number(b.registered) - Number(a.registered) || a.email.localeCompare(b.email));
 
   const mqtt = await fetchMqtt();
 

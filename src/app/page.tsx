@@ -1,4 +1,5 @@
 import Link from "next/link";
+import VisitTracker from "@/components/VisitTracker";
 import {
   ArrowRight,
   Zap,
@@ -18,6 +19,7 @@ const ACCENT = "#FFB800";
 export default function Home() {
   return (
     <div className="min-h-screen text-white overflow-x-hidden" style={{ background: "#0D1117" }}>
+      <VisitTracker />
       {/* Nav */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 border-b px-6 py-3"

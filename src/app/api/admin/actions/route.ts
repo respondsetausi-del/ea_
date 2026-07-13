@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin, superAdminEmails } from "@/lib/admin";
+import { requireSuperAdmin, superAdminEmails, isOwnerEmail } from "@/lib/admin";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     if (action === "remove") {
+      if (isOwnerEmail(email)) {
+        return NextResponse.json({ error: "The owner (super super admin) can't be removed." }, { status: 400 });
+      }
       if (superAdminEmails().includes(email)) {
         return NextResponse.json({ error: "This admin is set in server config and can't be removed here." }, { status: 400 });
       }
@@ -103,6 +106,9 @@ export async function POST(req: NextRequest) {
         // Look up the distributor's email so we can keep the allowlist in sync.
         const { data: d } = await supabase.from("distributors").select("email").eq("id", id).maybeSingle();
         const email = d?.email?.toLowerCase();
+        if (action === "revokeAdmin" && email && isOwnerEmail(email)) {
+          return NextResponse.json({ error: "The owner (super super admin) can't be demoted." }, { status: 400 });
+        }
         if (action === "revokeAdmin" && email && superAdminEmails().includes(email)) {
           return NextResponse.json({ error: "This admin is set in server config and can't be removed here." }, { status: 400 });
         }

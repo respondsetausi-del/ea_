@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
+import { track } from "@/lib/track";
 import { APPROVAL_MODE } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,6 +58,8 @@ export default function LoginPage() {
       return;
     }
 
+    // Log the successful login for site-traffic analytics (best-effort).
+    track("login", { email: data.user?.email || email });
     router.push("/dashboard");
   };
 
