@@ -17,10 +17,14 @@ const BORDER = "rgba(255,184,0,0.1)";
 // tag comes from each app's reportMT5Connection() call; "free-app" is the
 // EA Access product. Unknown tags fall back to the raw value.
 const APP_LABELS: Record<string, string> = {
-  "free-app": "EA Access",
-  "ea-converter": "EA Converter",
-  "tradeport": "Tradeport",
-  "emc": "EA Mobile Connect",
+  "free-app": "EA Access (iOS)",
+  "ea-access-android": "EA Access (Android)",
+  "ea-converter": "EA Converter (iOS)",
+  "ea-converter-android": "EA Converter (Android)",
+  "tradeport": "Tradeport (iOS)",
+  "tradeport-android": "Tradeport (Android)",
+  "emc": "EA Mobile Connect (iOS)",
+  "emc-android": "EA Mobile Connect (Android)",
 };
 const appLabel = (app: string) => APP_LABELS[app] || app;
 
