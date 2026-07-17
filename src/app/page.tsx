@@ -203,6 +203,56 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Free Activation — no mentor / no hoster */}
+      <section className="px-6 pb-4 flex justify-center">
+        <div
+          className="max-w-[900px] w-full rounded-3xl p-8 sm:p-10 border flex flex-col sm:flex-row items-center gap-7"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(255,184,0,0.10) 0%, rgba(22,27,34,0.9) 55%)",
+            borderColor: "rgba(255,184,0,0.25)",
+            boxShadow: "0 8px 40px rgba(255,184,0,0.08)",
+          }}
+        >
+          <div className="flex-1 text-center sm:text-left">
+            <div
+              className="inline-block px-3 py-1 rounded-full text-[10px] font-extrabold tracking-[2px] mb-3 border"
+              style={{
+                color: ACCENT,
+                background: "rgba(255,184,0,0.12)",
+                borderColor: "rgba(255,184,0,0.3)",
+              }}
+            >
+              FREE ACTIVATION
+            </div>
+            <h2 className="text-[26px] sm:text-[30px] font-black leading-tight mb-2.5">
+              No Mentor? No Hoster?{" "}
+              <span style={{ color: ACCENT }}>No Problem.</span>
+            </h2>
+            <p
+              className="text-[15px] leading-[24px] max-w-[460px] mx-auto sm:mx-0"
+              style={{ color: "#8B949E" }}
+            >
+              Get instant, free access to our flagship robot{" "}
+              <span className="font-bold text-white">EA ACCESS SCALPER</span>.
+              Just enter your email — your access key lands in your inbox in
+              seconds. No sign-up, no fees.
+            </p>
+          </div>
+          <Link
+            href="/activate"
+            className="flex items-center gap-2 px-8 py-4 rounded-2xl text-[16px] font-extrabold text-black transition-all shrink-0"
+            style={{
+              background: ACCENT,
+              boxShadow: "0 4px 24px rgba(255,184,0,0.4)",
+            }}
+          >
+            <Zap size={18} />
+            Activate Free
+          </Link>
+        </div>
+      </section>
+
       {/* Features */}
       <section
         className="py-20 px-6 flex flex-col items-center"

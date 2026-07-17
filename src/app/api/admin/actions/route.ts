@@ -5,7 +5,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 type Body = {
-  type?: "distributor" | "app_user" | "admin";
+  type?: "distributor" | "app_user" | "admin" | "ea";
   id?: string;
   action?: string;
   email?: string;
@@ -163,6 +163,32 @@ export async function POST(req: NextRequest) {
       }
       default:
         return NextResponse.json({ error: "Unknown app_user action" }, { status: 400 });
+    }
+  }
+
+  // ── EA / Free Activation robot switch ──
+  if (type === "ea") {
+    switch (action) {
+      case "setFreeActivation": {
+        // Single-select: clear every other bot, then flag this one.
+        const clear = await supabase.from("eas").update({ is_free_activation: false }).neq("id", id);
+        if (clear.error) {
+          return NextResponse.json(
+            { error: "Run the Free Activation migration first (adds is_free_activation to eas)." },
+            { status: 400 },
+          );
+        }
+        const { error } = await supabase.from("eas").update({ is_free_activation: true }).eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
+      case "clearFreeActivation": {
+        const { error } = await supabase.from("eas").update({ is_free_activation: false }).eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
+      default:
+        return NextResponse.json({ error: "Unknown ea action" }, { status: 400 });
     }
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
+import { resolveFreeActivationEA, FREE_ACTIVATION_EA_NAME } from "@/lib/free-activation";
 
 export const dynamic = "force-dynamic";
 
@@ -237,7 +238,38 @@ export async function GET(req: NextRequest) {
     };
   }).sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || Number(b.registered) - Number(a.registered) || a.email.localeCompare(b.email));
 
+  // ── Free Activation robot: the public mentor-less licensing flow ──
+  // Read the toggle flags defensively — the column may not exist pre-migration,
+  // in which case the switch UI is disabled and name/env resolution still works.
+  const faFlagRes = await supabase.from("eas").select("id, is_free_activation");
+  const faSwitchable = !faFlagRes.error;
+  const faFlags = new Map<string, boolean>(
+    (faSwitchable && faFlagRes.data ? faFlagRes.data : []).map((r: { id: string; is_free_activation?: boolean }) => [r.id, !!r.is_free_activation]),
+  );
+  const easRows = easList.map(e => ({
+    id: e.id,
+    name: e.name,
+    mentorId: e.mentor_id,
+    isActive: e.is_active,
+    distributorName: distById.get(e.distributor_id)?.name || "—",
+    isFreeActivation: faFlags.get(e.id) ?? false,
+  }));
+
+  const faEA = await resolveFreeActivationEA(supabase);
+  const freeActivation = faEA
+    ? {
+        configured: true,
+        switchable: faSwitchable,
+        eaId: faEA.id,
+        eaName: faEA.name,
+        mentorId: faEA.mentor_id,
+        active: faEA.is_active,
+        distributorName: distById.get(faEA.distributor_id)?.name || "—",
+        activations: usersList.filter(u => u.ea_id === faEA.id && u.license_sent_at).length,
+      }
+    : { configured: false, switchable: faSwitchable, expectedName: FREE_ACTIVATION_EA_NAME };
+
   const mqtt = await fetchMqtt();
 
-  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, admins, mt5Connections, mqtt });
+  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, admins, eas: easRows, mt5Connections, freeActivation, mqtt });
 }

@@ -1,36 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { randomBytes } from "crypto";
+import { createClient } from "@supabase/supabase-js";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
 import { isSuperAdminEmail, isAdminEmailInTable } from "@/lib/admin";
+import { generateUniqueKey } from "@/lib/license";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
-}
-
-// Unambiguous alphabet (no 0/O/1/I) → easier for users to type.
-const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-function makeLicenseKey(): string {
-  const bytes = randomBytes(15);
-  let out = "";
-  for (let i = 0; i < 15; i++) {
-    out += ALPHABET[bytes[i] % ALPHABET.length];
-  }
-  return out; // e.g. AB3CDEF7GHJK9LM
-}
-
-async function generateUniqueKey(supabase: SupabaseClient): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const key = makeLicenseKey();
-    const { data } = await supabase.from("app_users").select("id").eq("license_key", key).maybeSingle();
-    if (!data) return key;
-  }
-  // Extremely unlikely; fall back to a longer random suffix.
-  return makeLicenseKey() + randomBytes(3).toString("hex").toUpperCase();
 }
 
 export const dynamic = "force-dynamic";

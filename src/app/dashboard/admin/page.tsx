@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import {
   ShieldCheck, Users, Bot, KeyRound, Activity, Radio, Trash2,
-  BadgeCheck, Ban, Power, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2, BarChart3,
+  BadgeCheck, Ban, Power, PowerOff, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2, BarChart3,
 } from "lucide-react";
 
 const ACCENT = "#FFB800";
@@ -54,13 +54,30 @@ type Analytics = {
   connections: { total: number; online: number; offline: number; active24h: number; active7d: number; active30d: number };
   traffic: { visitsToday: number; visitsWeek: number; visitsMonth: number; uniqueToday: number; uniqueWeek: number; uniqueMonth: number; returningMonth: number; loginsToday: number; loginsWeek: number; loginsMonth: number };
 };
+type FreeActivation = {
+  configured: boolean;
+  switchable?: boolean;
+  eaId?: string;
+  eaName?: string;
+  mentorId?: string;
+  active?: boolean;
+  distributorName?: string;
+  activations?: number;
+  expectedName?: string;
+};
+type EARow = {
+  id: string; name: string; mentorId: string; isActive: boolean;
+  distributorName: string; isFreeActivation: boolean;
+};
 type Overview = {
   stats: Record<string, number>;
   analytics?: Analytics;
   distributors: Distributor[];
   appUsers: AppUser[];
   admins: Admin[];
+  eas?: EARow[];
   mt5Connections: ConnectedAccount[];
+  freeActivation?: FreeActivation;
   mqtt: any;
 };
 
@@ -92,6 +109,12 @@ const DEMO: Overview = {
     { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", status: "connected", online: true, lastHeartbeatAt: "2026-06-20T00:00:00Z", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
     { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", status: "disconnected", online: false, lastHeartbeatAt: "2026-06-18T00:00:00Z", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
+  eas: [
+    { id: "demo-1", name: "EA ACCESS SCALPER", mentorId: "EA-SCLP-2K9X", isActive: true, distributorName: "Super Admin", isFreeActivation: true },
+    { id: "demo-2", name: "Gold Scalper Pro", mentorId: "EA-GX4R-8KNP", isActive: true, distributorName: "Bellion FX", isFreeActivation: false },
+    { id: "demo-3", name: "Forex Hunter", mentorId: "EA-LM7W-Q2FT", isActive: false, distributorName: "Bellion FX", isFreeActivation: false },
+  ],
+  freeActivation: { configured: true, switchable: true, eaId: "demo-1", eaName: "EA ACCESS SCALPER", mentorId: "EA-SCLP-2K9X", active: true, distributorName: "Super Admin", activations: 12 },
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
       { id: "acct-abc", ip: "102.89.x.x", symbols: ["EURUSD", "XAUUSD"], signalsReceived: 64, connectedForSeconds: 3600 },
@@ -189,6 +212,37 @@ export default function AdminPage() {
     setAddingAdmin(false); setBusy(null);
   };
 
+  const eaAct = async (id: string, action: "setFreeActivation" | "clearFreeActivation") => {
+    setBusy(`ea:${id}:${action}`);
+    if (DEV_MODE) {
+      await new Promise(r => setTimeout(r, 400));
+      setData(prev => prev ? {
+        ...prev,
+        eas: (prev.eas || []).map(e => ({ ...e, isFreeActivation: action === "setFreeActivation" && e.id === id })),
+        freeActivation: (() => {
+          const target = (prev.eas || []).find(e => e.id === id);
+          if (action === "clearFreeActivation" || !target) return { configured: false, switchable: true, expectedName: "EA ACCESS SCALPER" };
+          return { configured: true, switchable: true, eaId: target.id, eaName: target.name, mentorId: target.mentorId, active: target.isActive, distributorName: target.distributorName, activations: prev.freeActivation?.activations ?? 0 };
+        })(),
+      } : prev);
+      setBusy(null);
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ type: "ea", id, action }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) alert(j.error || "Action failed");
+      else await load();
+    } catch {
+      alert("Action failed");
+    }
+    setBusy(null);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -232,6 +286,88 @@ export default function AdminPage() {
         <Stat icon={Link2} label="Connected" value={data.stats.connectedAccounts ?? 0} />
         <Stat icon={Radio} label="Online now" value={data.stats.onlineAccounts ?? 0} />
       </div>
+
+      {data.freeActivation && (
+        <Section title="Free Activation Robot" icon={Bot}>
+          {data.freeActivation.configured ? (
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(255,184,0,0.06)", border: `1px solid ${BORDER}` }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-bold text-white truncate">{data.freeActivation.eaName}</p>
+                {data.freeActivation.active
+                  ? <Tag color="green">LIVE</Tag>
+                  : <Tag color="red">INACTIVE — bot is turned off</Tag>}
+              </div>
+              <p className="text-[11px] mt-1" style={{ color: MUTED }}>
+                EA ID <span className="font-mono">{data.freeActivation.mentorId}</span>
+                {" · "}owned by {data.freeActivation.distributorName}
+                {" · "}{data.freeActivation.activations ?? 0} activations sent
+                {" · "}powers <a href="/activate" target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: ACCENT }}>/activate</a>
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 mb-4">
+              <AlertTriangle size={16} style={{ color: "#F59E0B" }} className="mt-0.5 shrink-0" />
+              <p className="text-xs" style={{ color: MUTED }}>
+                No Free Activation robot selected yet. Flip the switch on a bot below to power the{" "}
+                <a href="/activate" className="font-semibold" style={{ color: ACCENT }}>/activate</a> page.
+              </p>
+            </div>
+          )}
+
+          {data.freeActivation.switchable === false && (
+            <div className="flex items-start gap-2 mb-4 rounded-xl p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+              <AlertTriangle size={15} style={{ color: "#F59E0B" }} className="mt-0.5 shrink-0" />
+              <p className="text-[11px]" style={{ color: "#F59E0B" }}>
+                The switch needs a one-time DB migration. Run{" "}
+                <span className="font-mono">supabase-free-activation-migration.sql</span> in your Supabase SQL editor to enable per-bot selection. Until then it falls back to a bot named{" "}
+                <span className="font-bold">&ldquo;EA ACCESS SCALPER&rdquo;</span> or the <span className="font-mono">FREE_ACTIVATION_MENTOR_ID</span> env var.
+              </p>
+            </div>
+          )}
+
+          <p className="text-[10px] font-bold tracking-widest mb-2" style={{ color: MUTED }}>PICK THE ROBOT</p>
+          <div className="space-y-2">
+            {(data.eas || []).length === 0 && <p className="text-xs" style={{ color: MUTED }}>No trading bots exist yet. Create one in Trading Bots.</p>}
+            {(data.eas || []).map(ea => (
+              <div key={ea.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ea.isFreeActivation ? "rgba(255,184,0,0.4)" : BORDER}` }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-white truncate">{ea.name}</p>
+                    {ea.isFreeActivation && <Tag color="green">FREE ACTIVATION</Tag>}
+                    {!ea.isActive && <Tag color="gray">OFF</Tag>}
+                  </div>
+                  <p className="text-[11px] truncate" style={{ color: MUTED }}>
+                    <span className="font-mono">{ea.mentorId}</span> · {ea.distributorName}
+                  </p>
+                </div>
+                {ea.isFreeActivation ? (
+                  <button
+                    onClick={() => eaAct(ea.id, "clearFreeActivation")}
+                    disabled={busy === `ea:${ea.id}:clearFreeActivation` || data.freeActivation?.switchable === false}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40"
+                    style={{ border: `1px solid ${BORDER}`, color: MUTED }}
+                    title="Turn off Free Activation for this bot"
+                  >
+                    {busy === `ea:${ea.id}:clearFreeActivation` ? <RefreshCw size={13} className="animate-spin" /> : <PowerOff size={13} />}
+                    Turn off
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => eaAct(ea.id, "setFreeActivation")}
+                    disabled={busy === `ea:${ea.id}:setFreeActivation` || data.freeActivation?.switchable === false}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40 text-black"
+                    style={{ background: ACCENT }}
+                    title="Make this the Free Activation robot"
+                  >
+                    {busy === `ea:${ea.id}:setFreeActivation` ? <RefreshCw size={13} className="animate-spin" /> : <Power size={13} />}
+                    Set as robot
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {data.analytics && (
         <Section title="Analytics" icon={BarChart3}>
