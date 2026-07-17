@@ -42,6 +42,7 @@ export default function LicensesPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!callerEmail) {
@@ -147,13 +148,16 @@ export default function LicensesPage() {
 
   const generate = async (u: Row) => {
     // Resending replaces the existing key — the old one stops working immediately.
-    // Warn before doing that so a working key isn't invalidated by accident.
-    if (u.license_sent_at) {
-      const ok = window.confirm(
-        `Resend a key to ${u.email}?\n\nThis generates a BRAND-NEW key and permanently invalidates their current one. If they're already logged in with the old key, they'll be signed out and must use the new key.`
-      );
-      if (!ok) return;
+    // Use an in-UI two-click confirm (NOT window.confirm, which browsers can
+    // silently suppress, making the button appear dead). First click on an
+    // already-issued user arms the confirm; second click proceeds.
+    if (u.license_sent_at && confirmingId !== u.id) {
+      setConfirmingId(u.id);
+      setNotice({ id: u.id, msg: "Click again to confirm — this replaces their current key and signs them out of the old one.", ok: false });
+      setTimeout(() => setConfirmingId(prev => (prev === u.id ? null : prev)), 5000);
+      return;
     }
+    setConfirmingId(null);
 
     setSendingId(u.id);
     setNotice(null);
@@ -311,13 +315,15 @@ export default function LicensesPage() {
                       onClick={() => generate(u)}
                       disabled={busy}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0 disabled:opacity-50"
-                      style={sent
-                        ? { border: `1px solid ${BORDER}`, color: MUTED }
-                        : { background: ACCENT, color: "#000" }
+                      style={confirmingId === u.id
+                        ? { background: "#F59E0B", color: "#000" }
+                        : sent
+                          ? { border: `1px solid ${BORDER}`, color: MUTED }
+                          : { background: ACCENT, color: "#000" }
                       }
                     >
                       {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                      {busy ? "Sending…" : sent ? "Resend Key" : "Generate & Email"}
+                      {busy ? "Sending…" : confirmingId === u.id ? "Confirm resend?" : sent ? "Resend Key" : "Generate & Email"}
                     </button>
                   </div>
                 </div>
