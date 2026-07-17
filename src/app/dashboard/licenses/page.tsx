@@ -139,6 +139,15 @@ export default function LicensesPage() {
   };
 
   const generate = async (u: Row) => {
+    // Resending replaces the existing key — the old one stops working immediately.
+    // Warn before doing that so a working key isn't invalidated by accident.
+    if (u.license_sent_at) {
+      const ok = window.confirm(
+        `Resend a key to ${u.email}?\n\nThis generates a BRAND-NEW key and permanently invalidates their current one. If they're already logged in with the old key, they'll be signed out and must use the new key.`
+      );
+      if (!ok) return;
+    }
+
     setSendingId(u.id);
     setNotice(null);
 
