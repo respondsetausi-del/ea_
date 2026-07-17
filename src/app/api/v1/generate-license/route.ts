@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     emailSent: result.sent,
     emailSkipped: result.skipped ?? false,
+    emailError: result.error ?? null,
     sent_at: nowIso,
     ...(callerIsSuperAdmin ? { license_key: licenseKey } : {}),
   });

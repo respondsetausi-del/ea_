@@ -14,6 +14,20 @@ const BORDER = "rgba(255,184,0,0.1)";
 
 type Row = AppUser & { ea_name?: string };
 
+type LicenseResponse = { emailSent?: boolean; emailSkipped?: boolean; emailError?: string | null };
+
+// Build a truthful notice about the email result. Runs the same whether or not
+// the key was revealed to the caller — a revealed key must NOT hide a failed send.
+function emailNotice(data: LicenseResponse, email: string): { msg: string; ok: boolean } {
+  if (data.emailSkipped) {
+    return { msg: "License generated, but email was NOT sent — Brevo isn't configured (missing BREVO_API_KEY or BREVO_SENDER_EMAIL).", ok: false };
+  }
+  if (data.emailSent === false) {
+    return { msg: `License generated, but the email FAILED to send${data.emailError ? `: ${data.emailError}` : ""}. Check that your Brevo sender address is verified.`, ok: false };
+  }
+  return { msg: `License generated and emailed to ${email}.`, ok: true };
+}
+
 export default function LicensesPage() {
   const [users, setUsers] = useState<Row[]>([]);
   const [eas, setEAs] = useState<EA[]>([]);
@@ -116,15 +130,8 @@ export default function LicensesPage() {
         if (data.license_key) {
           setRevealedKeys(prev => ({ ...prev, [newUser.id]: data.license_key }));
         }
-        setNotice({
-          id: newUser.id,
-          msg: data.license_key
-            ? `User added. License generated.`
-            : data.emailSkipped
-              ? `User added. License saved but email not configured (no Brevo key).`
-              : `User added & license emailed to ${addForm.email}.`,
-          ok: !data.emailSkipped,
-        });
+        const status = emailNotice(data, addForm.email);
+        setNotice({ id: newUser.id, msg: `User added. ${status.msg}`, ok: status.ok });
       } else {
         setNotice({ id: newUser.id, msg: `User added but license failed: ${data.error || "unknown error"}`, ok: false });
       }
@@ -170,15 +177,7 @@ export default function LicensesPage() {
         if (data.license_key) {
           setRevealedKeys(prev => ({ ...prev, [u.id]: data.license_key }));
         }
-        setNotice({
-          id: u.id,
-          msg: data.license_key
-            ? `Fresh license generated for ${u.email}.`
-            : data.emailSkipped
-              ? "License saved, but email is not configured yet (no Brevo key)."
-              : `Fresh license emailed to ${u.email}.`,
-          ok: !data.emailSkipped,
-        });
+        setNotice({ id: u.id, ...emailNotice(data, u.email) });
         await load();
       } else {
         setNotice({ id: u.id, msg: data.error || "Failed to generate license.", ok: false });
