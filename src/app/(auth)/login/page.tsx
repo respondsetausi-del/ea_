@@ -168,6 +168,16 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="text-right">
+              <Link
+                href="/forgot-password"
+                className="text-[11px] font-semibold hover:opacity-80 transition"
+                style={{ color: ACCENT }}
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             {error && (
               <p className="text-red-400 text-xs text-center">{error}</p>
             )}

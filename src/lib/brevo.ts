@@ -185,6 +185,30 @@ export function licenseEmail(appName: string, licenseKey: string): { subject: st
   return { subject, htmlContent };
 }
 
+export function passwordResetEmail(name: string, resetUrl: string): { subject: string; htmlContent: string } {
+  const subject = "Reset your Free Robot password";
+  const htmlContent = emailShell(
+    "Reset your password",
+    `
+    <p style="color:#c7cdd0;font-size:14px;line-height:22px;margin:0 0 6px;">
+      Hi ${name || "there"},
+    </p>
+    <p style="color:#c7cdd0;font-size:14px;line-height:22px;margin:0;">
+      We received a request to reset your distributor account password. Click the
+      button below to choose a new one. This link expires in 1 hour.
+    </p>
+    ${ctaButton(resetUrl, "Reset Password")}
+    <p style="color:#8a8f92;font-size:12px;line-height:18px;margin:18px 0 0;">
+      If the button doesn't work, paste this link into your browser:<br/>
+      <a href="${resetUrl}" style="color:${ACCENT};word-break:break-all;">${resetUrl}</a>
+    </p>
+    <p style="color:#8a8f92;font-size:12px;line-height:18px;margin:14px 0 0;">
+      Didn't request this? You can safely ignore this email — your password won't change.
+    </p>`
+  );
+  return { subject, htmlContent };
+}
+
 export function accessGrantedEmail(name: string, loginUrl: string): { subject: string; htmlContent: string } {
   const subject = "Your Free Robot account is approved 🎉";
   const htmlContent = emailShell(

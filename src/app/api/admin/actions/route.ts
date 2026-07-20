@@ -120,6 +120,19 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ ok: true });
       }
+      case "resetPassword": {
+        // Send the distributor a password-reset email (reuses the public flow).
+        const { data: d } = await supabase.from("distributors").select("email").eq("id", id).maybeSingle();
+        if (!d?.email) return NextResponse.json({ error: "Distributor not found" }, { status: 404 });
+        const res = await fetch(`${req.nextUrl.origin}/api/v1/request-password-reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: d.email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return NextResponse.json({ error: data.error || "Could not send reset email" }, { status: res.status });
+        return NextResponse.json({ ok: true, emailSent: data.emailSent, emailSkipped: data.emailSkipped });
+      }
       case "delete": {
         // Remove the auth user too; distributor row cascades from auth.users.
         const { error: authErr } = await supabase.auth.admin.deleteUser(id);

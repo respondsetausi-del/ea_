@@ -541,6 +541,7 @@ export default function AdminPage() {
                 {d.isSuperAdmin
                   ? <ActionBtn busy={isBusy(d.id, "revokeAdmin")} onClick={() => act("distributor", d.id, "revokeAdmin", `Revoke admin from ${d.name}?`)} icon={Crown} title="Revoke admin" danger />
                   : <ActionBtn busy={isBusy(d.id, "grantAdmin")} onClick={() => act("distributor", d.id, "grantAdmin", `Grant super-admin to ${d.name}?`)} icon={Crown} title="Grant admin" />}
+                <ActionBtn busy={isBusy(d.id, "resetPassword")} onClick={() => act("distributor", d.id, "resetPassword", `Email a password-reset link to ${d.name} (${d.email})?`)} icon={KeyRound} title="Send password reset" />
                 <ActionBtn busy={isBusy(d.id, "delete")} onClick={() => act("distributor", d.id, "delete", `DELETE ${d.name} and ALL their data? This cannot be undone.`)} icon={Trash2} title="Delete" danger />
               </div>
             </div>
