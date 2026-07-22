@@ -39,7 +39,7 @@ export default function Home() {
               EA
             </div>
             <span className="text-xl font-extrabold tracking-wide">
-              EA <span style={{ color: ACCENT }}>ACCESS</span>
+              EA <span style={{ color: ACCENT }}>NAPTUNE</span>
             </span>
           </div>
           <div className="flex items-center gap-2.5">
@@ -234,7 +234,7 @@ export default function Home() {
               style={{ color: "#8B949E" }}
             >
               Get instant, free access to our flagship robot{" "}
-              <span className="font-bold text-white">EA ACCESS SCALPER</span>.
+              <span className="font-bold text-white">EA NAPTUNE SCALPER</span>.
               Just enter your email — your access key lands in your inbox in
               seconds. No sign-up, no fees.
             </p>
@@ -265,7 +265,7 @@ export default function Home() {
           FEATURES
         </p>
         <h2 className="text-[32px] font-black text-center mb-12 tracking-tight">
-          Why Traders Choose EA Access
+          Why Traders Choose EA Naptune
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-[1000px] w-full">
           {[
@@ -436,8 +436,8 @@ export default function Home() {
         <div className="max-w-[700px] w-full space-y-2.5">
           {[
             {
-              q: "How does EA Access work?",
-              a: "EA Access converts your Expert Advisors into mobile-compatible bots. Once you connect your MT5 account, the app communicates directly with your broker to execute trades based on your EA signals — all from your phone.",
+              q: "How does EA Naptune work?",
+              a: "EA Naptune converts your Expert Advisors into mobile-compatible bots. Once you connect your MT5 account, the app communicates directly with your broker to execute trades based on your EA signals — all from your phone.",
             },
             {
               q: "Is my trading account safe?",
@@ -445,11 +445,11 @@ export default function Home() {
             },
             {
               q: "Which brokers are supported?",
-              a: "EA Access supports all major MT5 brokers including RazorMarkets, Deriv, RCG Markets, Trade245, and any broker with a web terminal. MT4 support is also available.",
+              a: "EA Naptune supports all major MT5 brokers including RazorMarkets, Deriv, RCG Markets, Trade245, and any broker with a web terminal. MT4 support is also available.",
             },
             {
               q: "Do I need a VPS?",
-              a: "No. EA Access eliminates the need for a VPS entirely. Your phone acts as the trading server, executing trades with ultra-low latency directly through the broker's platform.",
+              a: "No. EA Naptune eliminates the need for a VPS entirely. Your phone acts as the trading server, executing trades with ultra-low latency directly through the broker's platform.",
             },
           ].map((faq, i) => (
             <details
@@ -516,7 +516,7 @@ export default function Home() {
             className="text-[14px] text-center leading-[23px] max-w-[440px] mb-[30px]"
             style={{ color: "#8B949E" }}
           >
-            Join thousands of traders using EA Access to run their Expert
+            Join thousands of traders using EA Naptune to run their Expert
             Advisors from anywhere. No setup fees, no VPS costs — just seamless
             mobile trading.
           </p>
@@ -542,7 +542,7 @@ export default function Home() {
         <div className="max-w-[1100px] mx-auto flex flex-col items-center">
           <div className="text-center mb-4">
             <span className="text-[18px] font-black tracking-wide">
-              EA <span style={{ color: ACCENT }}>ACCESS</span>
+              EA <span style={{ color: ACCENT }}>NAPTUNE</span>
             </span>
             <p className="text-[12px] mt-1" style={{ color: "#8B949E" }}>
               Free Mobile EA Trading
@@ -564,7 +564,7 @@ export default function Home() {
             </span>
           </div>
           <p className="text-[12px]" style={{ color: "rgba(139,148,158,0.5)" }}>
-            &copy; 2025 EA Access. All rights reserved.
+            &copy; 2025 EA Naptune. All rights reserved.
           </p>
         </div>
       </footer>
