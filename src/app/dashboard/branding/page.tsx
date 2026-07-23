@@ -5,11 +5,11 @@ import { supabase, DEV_MODE } from "@/lib/supabase";
 import { Upload, Save, Image as ImageIcon } from "lucide-react";
 import type { Branding } from "@/lib/database.types";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(255,184,0,0.1)";
+const BORDER = "rgba(10,132,255,0.1)";
 
 export default function AccountPage() {
   const [branding, setBranding] = useState<Branding | null>(null);
@@ -135,7 +135,7 @@ export default function AccountPage() {
             <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
               style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-              onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+              onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
               onBlur={e => e.target.style.borderColor = BORDER}
               placeholder="Your full name" />
           </div>
@@ -155,7 +155,7 @@ export default function AccountPage() {
           <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
             className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+            onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
             placeholder="Your brand / app name" />
         </div>
@@ -188,7 +188,7 @@ export default function AccountPage() {
           <p className="text-[10px] mb-3" style={{ color: MUTED }}>This appears as the main avatar in the app</p>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0"
-                 style={{ border: `2px solid rgba(255,184,0,0.3)`, background: "rgba(255,255,255,0.04)" }}>
+                 style={{ border: `2px solid rgba(10,132,255,0.3)`, background: "rgba(255,255,255,0.04)" }}>
               {robotPreview ? (
                 <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
               ) : (
@@ -210,7 +210,7 @@ export default function AccountPage() {
         <p className="text-[10px] font-bold tracking-widest mb-4" style={{ color: MUTED }}>PREVIEW</p>
         <div className="flex flex-col items-center py-6">
           <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-3"
-               style={{ border: `2px solid ${ACCENT}`, boxShadow: `0 0 20px rgba(255,184,0,0.25)` }}>
+               style={{ border: `2px solid ${ACCENT}`, boxShadow: `0 0 20px rgba(10,132,255,0.25)` }}>
             {robotPreview ? (
               <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
             ) : (
@@ -224,7 +224,7 @@ export default function AccountPage() {
 
       <button onClick={handleSave} disabled={saving}
         className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
-        style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}>
+        style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(10,132,255,0.3)" }}>
         <Save size={16} />
         {saving ? "Saving..." : success ? "Saved!" : "Save Account"}
       </button>

@@ -5,11 +5,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Zap, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(255,184,0,0.1)";
+const BORDER = "rgba(10,132,255,0.1)";
 
 function ResetInner() {
   const params = useSearchParams();
@@ -77,7 +77,7 @@ function ResetInner() {
           ) : (
             <>
               <div className="text-center mb-7">
-                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(255,184,0,0.1)" }}>
+                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(10,132,255,0.1)" }}>
                   <Zap size={24} style={{ color: ACCENT }} />
                 </div>
                 <h1 className="text-xl font-black tracking-wider text-white">NEW PASSWORD</h1>
@@ -97,7 +97,7 @@ function ResetInner() {
                       required
                       className="w-full rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                       style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                      onFocus={(e) => (e.target.style.borderColor = "rgba(255,184,0,0.4)")}
+                      onFocus={(e) => (e.target.style.borderColor = "rgba(10,132,255,0.4)")}
                       onBlur={(e) => (e.target.style.borderColor = BORDER)}
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: MUTED }}>
@@ -117,7 +117,7 @@ function ResetInner() {
                     required
                     className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                     style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                    onFocus={(e) => (e.target.style.borderColor = "rgba(255,184,0,0.4)")}
+                    onFocus={(e) => (e.target.style.borderColor = "rgba(10,132,255,0.4)")}
                     onBlur={(e) => (e.target.style.borderColor = BORDER)}
                   />
                 </div>
@@ -128,7 +128,7 @@ function ResetInner() {
                   type="submit"
                   disabled={busy}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm tracking-wide transition disabled:opacity-50 text-black"
-                  style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}
+                  style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(10,132,255,0.3)" }}
                 >
                   {busy ? <Loader2 size={16} className="animate-spin" /> : null}
                   {busy ? "Updating…" : "Update Password"}

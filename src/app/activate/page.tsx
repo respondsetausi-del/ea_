@@ -4,11 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Zap, Mail, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(255,184,0,0.1)";
+const BORDER = "rgba(10,132,255,0.1)";
 
 export default function ActivatePage() {
   const [email, setEmail] = useState("");
@@ -64,20 +64,20 @@ export default function ActivatePage() {
         className="w-full max-w-[440px] rounded-3xl p-8 sm:p-10 border"
         style={{
           background: CARD,
-          borderColor: "rgba(255,184,0,0.15)",
+          borderColor: "rgba(10,132,255,0.15)",
           boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
         }}
       >
         <div className="flex flex-col items-center text-center mb-7">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "rgba(255,184,0,0.12)" }}
+            style={{ background: "rgba(10,132,255,0.12)" }}
           >
             <Zap size={26} style={{ color: ACCENT }} />
           </div>
           <div
             className="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-[2px] mb-3 border"
-            style={{ color: ACCENT, background: "rgba(255,184,0,0.1)", borderColor: "rgba(255,184,0,0.25)" }}
+            style={{ color: ACCENT, background: "rgba(10,132,255,0.1)", borderColor: "rgba(10,132,255,0.25)" }}
           >
             FREE ACTIVATION
           </div>
@@ -128,7 +128,7 @@ export default function ActivatePage() {
                   required
                   className="w-full rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                   style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                  onFocus={(e) => (e.target.style.borderColor = "rgba(255,184,0,0.4)")}
+                  onFocus={(e) => (e.target.style.borderColor = "rgba(10,132,255,0.4)")}
                   onBlur={(e) => (e.target.style.borderColor = BORDER)}
                 />
               </div>
@@ -140,7 +140,7 @@ export default function ActivatePage() {
               type="submit"
               disabled={busy}
               className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-[15px] font-extrabold text-black transition disabled:opacity-60"
-              style={{ background: ACCENT, boxShadow: "0 4px 20px rgba(255,184,0,0.35)" }}
+              style={{ background: ACCENT, boxShadow: "0 4px 20px rgba(10,132,255,0.35)" }}
             >
               {busy ? <Loader2 size={17} className="animate-spin" /> : <Zap size={17} />}
               {busy ? "Activating…" : "Get My Free Key"}

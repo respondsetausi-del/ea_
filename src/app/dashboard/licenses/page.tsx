@@ -6,11 +6,11 @@ import { KeyRound, MailCheck, Send, Loader2, UserPlus, Copy, Check, Eye } from "
 import type { AppUser, EA } from "@/lib/database.types";
 import { isSuperAdminEmailClient } from "@/lib/admin-client";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(255,184,0,0.1)";
+const BORDER = "rgba(10,132,255,0.1)";
 
 type Row = AppUser & { ea_name?: string };
 
@@ -203,7 +203,7 @@ export default function LicensesPage() {
         <button
           onClick={() => setShowAdd(!showAdd)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition text-black"
-          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(255,184,0,0.3)" }}
+          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(10,132,255,0.3)" }}
         >
           <UserPlus size={16} />
           Add User & License
@@ -219,7 +219,7 @@ export default function LicensesPage() {
               <input type="email" value={addForm.email} onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}
                 placeholder="user@example.com" required />
             </div>
@@ -228,7 +228,7 @@ export default function LicensesPage() {
               <select value={addForm.ea_id} onChange={e => setAddForm(f => ({ ...f, ea_id: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-                onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+                onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}>
                 <option value="">Select EA...</option>
                 {eas.map(ea => <option key={ea.id} value={ea.id}>{ea.name} ({ea.mentor_id})</option>)}
@@ -254,7 +254,7 @@ export default function LicensesPage() {
       )}
 
       {notice && !users.find(u => u.id === notice.id) && (
-        <div className="rounded-xl p-3 text-xs" style={{ background: notice.ok ? "rgba(255,184,0,0.08)" : "rgba(245,158,11,0.08)", color: notice.ok ? ACCENT : "#F59E0B" }}>
+        <div className="rounded-xl p-3 text-xs" style={{ background: notice.ok ? "rgba(10,132,255,0.08)" : "rgba(245,158,11,0.08)", color: notice.ok ? ACCENT : "#F59E0B" }}>
           {notice.msg}
         </div>
       )}
@@ -279,7 +279,7 @@ export default function LicensesPage() {
                   <div className="flex items-center gap-4">
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: sent ? "rgba(255,184,0,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
+                      style={{ background: sent ? "rgba(10,132,255,0.12)" : "rgba(255,255,255,0.05)", color: sent ? ACCENT : MUTED }}
                     >
                       {sent ? <MailCheck size={16} /> : <KeyRound size={16} />}
                     </div>
@@ -294,7 +294,7 @@ export default function LicensesPage() {
                       )}
                       {revealedKeys[u.id] && (
                         <div className="flex items-center gap-2 mt-1.5">
-                          <code className="text-xs font-mono px-2 py-1 rounded-lg" style={{ background: "rgba(255,184,0,0.08)", color: ACCENT, border: `1px solid ${BORDER}` }}>
+                          <code className="text-xs font-mono px-2 py-1 rounded-lg" style={{ background: "rgba(10,132,255,0.08)", color: ACCENT, border: `1px solid ${BORDER}` }}>
                             {revealedKeys[u.id]}
                           </code>
                           <button

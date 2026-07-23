@@ -7,11 +7,11 @@ import {
   BadgeCheck, Ban, Power, PowerOff, Send, Crown, RefreshCw, AlertTriangle, UserPlus, Lock, Clock, Link2, BarChart3,
 } from "lucide-react";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 const CARD = "#161B22";
 const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
-const BORDER = "rgba(255,184,0,0.1)";
+const BORDER = "rgba(10,132,255,0.1)";
 
 // Friendly display names for the app that reported a connected account. The raw
 // tag comes from each app's reportMT5Connection() call; "free-app" is the
@@ -290,7 +290,7 @@ export default function AdminPage() {
       {data.freeActivation && (
         <Section title="Free Activation Robot" icon={Bot}>
           {data.freeActivation.configured ? (
-            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(255,184,0,0.06)", border: `1px solid ${BORDER}` }}>
+            <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(10,132,255,0.06)", border: `1px solid ${BORDER}` }}>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-bold text-white truncate">{data.freeActivation.eaName}</p>
                 {data.freeActivation.active
@@ -329,7 +329,7 @@ export default function AdminPage() {
           <div className="space-y-2">
             {(data.eas || []).length === 0 && <p className="text-xs" style={{ color: MUTED }}>No trading bots exist yet. Create one in Trading Bots.</p>}
             {(data.eas || []).map(ea => (
-              <div key={ea.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ea.isFreeActivation ? "rgba(255,184,0,0.4)" : BORDER}` }}>
+              <div key={ea.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ea.isFreeActivation ? "rgba(10,132,255,0.4)" : BORDER}` }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-white truncate">{ea.name}</p>
@@ -436,7 +436,7 @@ export default function AdminPage() {
             placeholder="new-admin@email.com"
             className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
             style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(255,184,0,0.4)"}
+            onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
             onBlur={e => e.target.style.borderColor = BORDER}
           />
           <button
@@ -457,7 +457,7 @@ export default function AdminPage() {
             <div key={a.email} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: a.isOwner ? "rgba(255,184,0,0.2)" : a.registered ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: a.isOwner ? ACCENT : a.registered ? "#F59E0B" : MUTED }}
+                style={{ background: a.isOwner ? "rgba(10,132,255,0.2)" : a.registered ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: a.isOwner ? ACCENT : a.registered ? "#F59E0B" : MUTED }}
               >
                 {a.registered ? <Crown size={15} /> : <Clock size={15} />}
               </div>
@@ -475,7 +475,7 @@ export default function AdminPage() {
                 {a.name && <p className="text-[11px] truncate" style={{ color: MUTED }}>{a.name}</p>}
               </div>
               {a.locked ? (
-                <span title={a.isOwner ? "Owner (super super admin) — permanent, can't be removed" : "Set in server config (SUPER_ADMIN_EMAILS)"} style={{ color: a.isOwner ? "rgba(255,184,0,0.4)" : "rgba(255,255,255,0.15)" }}><Lock size={15} /></span>
+                <span title={a.isOwner ? "Owner (super super admin) — permanent, can't be removed" : "Set in server config (SUPER_ADMIN_EMAILS)"} style={{ color: a.isOwner ? "rgba(10,132,255,0.4)" : "rgba(255,255,255,0.15)" }}><Lock size={15} /></span>
               ) : (
                 <ActionBtn
                   busy={busy === `admin:${a.email}`}
@@ -509,7 +509,7 @@ export default function AdminPage() {
                 <p className="text-[10px] font-bold tracking-widest mb-2" style={{ color: MUTED }}>RECENT SIGNALS</p>
                 <div className="flex flex-wrap gap-2">
                   {data.mqtt.signals.recent.slice(0, 12).map((s: any, i: number) => (
-                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md" style={{ background: "rgba(255,184,0,0.08)", color: ACCENT }}>
+                    <span key={i} className="text-[11px] font-mono px-2 py-1 rounded-md" style={{ background: "rgba(10,132,255,0.08)", color: ACCENT }}>
                       {s.symbol}{s.direction ? `/${s.direction}` : ""}
                     </span>
                   ))}
@@ -581,7 +581,7 @@ export default function AdminPage() {
         ).sort((a, b) => a[0].localeCompare(b[0])).map(([app, list]) => (
           <div key={app} className="mb-4 last:mb-0">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded" style={{ background: "rgba(255,184,0,0.12)", color: ACCENT }}>{appLabel(app)}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded" style={{ background: "rgba(10,132,255,0.12)", color: ACCENT }}>{appLabel(app)}</span>
               <span className="text-[11px]" style={{ color: MUTED }}>{list.length} account{list.length === 1 ? "" : "s"}</span>
             </div>
             <div className="space-y-2">
@@ -666,7 +666,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 
 function Tag({ color, children }: { color: "green" | "red" | "amber" | "gray"; children: React.ReactNode }) {
   const map: Record<string, { bg: string; fg: string }> = {
-    green: { bg: "rgba(255,184,0,0.12)", fg: ACCENT },
+    green: { bg: "rgba(10,132,255,0.12)", fg: ACCENT },
     red: { bg: "rgba(239,68,68,0.12)", fg: "#EF4444" },
     amber: { bg: "rgba(245,158,11,0.12)", fg: "#F59E0B" },
     gray: { bg: "rgba(255,255,255,0.06)", fg: MUTED },
@@ -692,8 +692,8 @@ function Health({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="px-3 py-2 rounded-lg flex items-center gap-2"
       style={{
-        background: ok ? "rgba(255,184,0,0.08)" : "rgba(239,68,68,0.08)",
-        border: `1px solid ${ok ? "rgba(255,184,0,0.2)" : "rgba(239,68,68,0.2)"}`,
+        background: ok ? "rgba(10,132,255,0.08)" : "rgba(239,68,68,0.08)",
+        border: `1px solid ${ok ? "rgba(10,132,255,0.2)" : "rgba(239,68,68,0.2)"}`,
       }}
     >
       <ShieldCheck size={16} style={{ color: ok ? ACCENT : "#EF4444" }} />
@@ -712,7 +712,7 @@ function ActionBtn({ icon: Icon, title, onClick, busy, danger }: { icon: any; ti
       }}
       onMouseEnter={e => {
         e.currentTarget.style.color = danger ? "#EF4444" : "#F0F6FC";
-        e.currentTarget.style.borderColor = danger ? "rgba(239,68,68,0.4)" : "rgba(255,184,0,0.3)";
+        e.currentTarget.style.borderColor = danger ? "rgba(239,68,68,0.4)" : "rgba(10,132,255,0.3)";
       }}
       onMouseLeave={e => {
         e.currentTarget.style.color = MUTED;

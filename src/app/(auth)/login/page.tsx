@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap, Eye, EyeOff } from "lucide-react";
 
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -84,14 +84,14 @@ export default function LoginPage() {
           className="rounded-2xl border p-8"
           style={{
             background: "#161B22",
-            borderColor: "rgba(255,184,0,0.1)",
+            borderColor: "rgba(10,132,255,0.1)",
             boxShadow: "0 4px 40px rgba(0,0,0,0.4)",
           }}
         >
           <div className="text-center mb-7">
             <div
               className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(255,184,0,0.1)" }}
+              style={{ background: "rgba(10,132,255,0.1)" }}
             >
               <Zap size={24} style={{ color: ACCENT }} />
             </div>
@@ -118,13 +118,13 @@ export default function LoginPage() {
                 className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
                 style={{
                   background: "rgba(13,17,23,0.8)",
-                  border: "1px solid rgba(255,184,0,0.1)",
+                  border: "1px solid rgba(10,132,255,0.1)",
                 }}
                 onFocus={(e) =>
-                  (e.target.style.borderColor = "rgba(255,184,0,0.4)")
+                  (e.target.style.borderColor = "rgba(10,132,255,0.4)")
                 }
                 onBlur={(e) =>
-                  (e.target.style.borderColor = "rgba(255,184,0,0.1)")
+                  (e.target.style.borderColor = "rgba(10,132,255,0.1)")
                 }
                 placeholder="you@example.com"
                 required
@@ -146,13 +146,13 @@ export default function LoginPage() {
                   className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition pr-12"
                   style={{
                     background: "rgba(13,17,23,0.8)",
-                    border: "1px solid rgba(255,184,0,0.1)",
+                    border: "1px solid rgba(10,132,255,0.1)",
                   }}
                   onFocus={(e) =>
-                    (e.target.style.borderColor = "rgba(255,184,0,0.4)")
+                    (e.target.style.borderColor = "rgba(10,132,255,0.4)")
                   }
                   onBlur={(e) =>
-                    (e.target.style.borderColor = "rgba(255,184,0,0.1)")
+                    (e.target.style.borderColor = "rgba(10,132,255,0.1)")
                   }
                   placeholder="••••••••"
                   required
@@ -188,7 +188,7 @@ export default function LoginPage() {
               className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition disabled:opacity-50 text-black"
               style={{
                 background: ACCENT,
-                boxShadow: "0 4px 16px rgba(255,184,0,0.3)",
+                boxShadow: "0 4px 16px rgba(10,132,255,0.3)",
               }}
             >
               {loading ? "Signing in..." : "Sign In"}
@@ -202,8 +202,8 @@ export default function LoginPage() {
               className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition mt-3 border"
               style={{
                 color: ACCENT,
-                borderColor: "rgba(255,184,0,0.25)",
-                background: "rgba(255,184,0,0.06)",
+                borderColor: "rgba(10,132,255,0.25)",
+                background: "rgba(10,132,255,0.06)",
               }}
             >
               Demo Login (No Supabase)

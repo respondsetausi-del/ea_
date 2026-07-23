@@ -68,7 +68,7 @@ export async function sendEmail({ to, toName, subject, htmlContent }: SendEmailA
 }
 
 /** Shared brand colors / wrapper for our emails. */
-const ACCENT = "#FFB800";
+const ACCENT = "#0A84FF";
 
 function emailShell(title: string, bodyHtml: string): string {
   return `
@@ -77,7 +77,7 @@ function emailShell(title: string, bodyHtml: string): string {
       <div style="text-align:center;margin-bottom:28px;">
         <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">FREE ROBOT</span>
       </div>
-      <div style="background:#11161300;background-color:#121814;border:1px solid rgba(255,184,0,0.25);border-radius:18px;padding:32px 28px;">
+      <div style="background:#11161300;background-color:#121814;border:1px solid rgba(10,132,255,0.25);border-radius:18px;padding:32px 28px;">
         <h1 style="margin:0 0 14px;font-size:20px;color:#ffffff;font-weight:800;">${title}</h1>
         ${bodyHtml}
       </div>
@@ -105,7 +105,7 @@ function ctaButton(href: string, label: string): string {
 export function quickServerBanner(): string {
   const url = process.env.QUICK_SERVER_URL || "https://free-app-site.vercel.app";
   return `
-    <div style="margin:24px 0 4px;background:linear-gradient(135deg,#1c2416,#121814);border:1px solid rgba(255,184,0,0.3);border-radius:16px;padding:22px 20px;text-align:center;">
+    <div style="margin:24px 0 4px;background:linear-gradient(135deg,#1c2416,#121814);border:1px solid rgba(10,132,255,0.3);border-radius:16px;padding:22px 20px;text-align:center;">
       <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:${ACCENT};text-transform:uppercase;margin-bottom:8px;">Quick Server</div>
       <div style="font-size:17px;font-weight:800;color:#ffffff;margin:0 0 8px;">Power Your Trading with Quick Server</div>
       <p style="font-size:13px;color:#c7cdd0;line-height:20px;margin:0 0 16px;">
