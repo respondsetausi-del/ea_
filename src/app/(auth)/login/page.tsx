@@ -7,7 +7,8 @@ import { track } from "@/lib/track";
 import { APPROVAL_MODE } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Zap, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 
@@ -70,12 +71,13 @@ export default function LoginPage() {
     >
       <div className="w-full max-w-sm">
         {/* Back to home */}
-        <div className="text-center mb-6">
+        <div className="flex justify-center mb-6">
           <Link
             href="/"
-            className="text-[18px] font-black tracking-wide inline-block"
+            className="flex items-center gap-2 text-[18px] font-black tracking-wide"
           >
-            EA <span style={{ color: ACCENT }}>ACCESS</span>
+            <Logo size={24} />
+            EA <span style={{ color: ACCENT }}>NAPTUNE</span>
           </Link>
         </div>
 
@@ -89,11 +91,8 @@ export default function LoginPage() {
           }}
         >
           <div className="text-center mb-7">
-            <div
-              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(10,132,255,0.1)" }}
-            >
-              <Zap size={24} style={{ color: ACCENT }} />
+            <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(10,132,255,0.08)" }}>
+              <Logo size={38} />
             </div>
             <h1 className="text-xl font-black tracking-wider text-white">
               SIGN IN

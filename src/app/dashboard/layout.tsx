@@ -5,7 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
 import Link from "next/link";
-import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, Zap, UserCircle } from "lucide-react";
+import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, UserCircle } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 const BG = "#0D1117";
@@ -130,11 +131,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div className="px-5 pt-6 pb-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,132,255,0.12)" }}>
-              <Zap size={16} style={{ color: ACCENT }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <Logo size={26} />
             </div>
             <div>
-              <h2 className="text-sm font-black tracking-widest text-white">EA <span style={{ color: ACCENT }}>ACCESS</span></h2>
+              <h2 className="text-sm font-black tracking-widest text-white">EA <span style={{ color: ACCENT }}>NAPTUNE</span></h2>
               <p className="text-[9px] tracking-wider" style={{ color: MUTED }}>Distributor Panel</p>
             </div>
           </Link>

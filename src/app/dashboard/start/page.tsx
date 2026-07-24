@@ -72,7 +72,7 @@ export default function OnboardingWizard() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-black tracking-wide text-white">Welcome to EA <span style={{ color: ACCENT }}>ACCESS</span></h2>
+        <h2 className="text-2xl font-black tracking-wide text-white">Welcome to EA <span style={{ color: ACCENT }}>NAPTUNE</span></h2>
         <p className="text-sm mt-1" style={{ color: MUTED }}>Follow these steps in order to launch your white-label app.</p>
       </div>
 

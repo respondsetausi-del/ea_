@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Zap, Mail, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 const CARD = "#161B22";
@@ -71,9 +72,9 @@ export default function ActivatePage() {
         <div className="flex flex-col items-center text-center mb-7">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "rgba(10,132,255,0.12)" }}
+            style={{ background: "rgba(10,132,255,0.10)" }}
           >
-            <Zap size={26} style={{ color: ACCENT }} />
+            <Logo size={40} />
           </div>
           <div
             className="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-[2px] mb-3 border"
@@ -82,7 +83,7 @@ export default function ActivatePage() {
             FREE ACTIVATION
           </div>
           <h1 className="text-[26px] font-black leading-tight mb-2">
-            Activate <span style={{ color: ACCENT }}>EA ACCESS SCALPER</span>
+            Activate <span style={{ color: ACCENT }}>EA NAPTUNE SCALPER</span>
           </h1>
           <p className="text-[14px] leading-[22px]" style={{ color: MUTED }}>
             No mentor or hoster needed. Enter your email and we&apos;ll send your
@@ -95,7 +96,7 @@ export default function ActivatePage() {
             <CheckCircle2 size={44} style={{ color: ACCENT }} className="mb-4" />
             <h2 className="text-lg font-black mb-2">Check your inbox 📬</h2>
             <p className="text-[14px] leading-[22px]" style={{ color: MUTED }}>
-              We&apos;ve emailed your EA ACCESS SCALPER access key to{" "}
+              We&apos;ve emailed your EA NAPTUNE SCALPER access key to{" "}
               <span className="font-semibold text-white">{email.trim().toLowerCase()}</span>.
               Open the app, enter your email and this key to log in.
             </p>
@@ -147,7 +148,7 @@ export default function ActivatePage() {
             </button>
 
             <p className="text-[11px] text-center leading-[18px]" style={{ color: MUTED }}>
-              Your key is tied to your email and grants access to the EA ACCESS
+              Your key is tied to your email and grants access to the EA NAPTUNE
               SCALPER bot. We&apos;ll never share your address.
             </p>
           </form>

@@ -110,11 +110,11 @@ const DEMO: Overview = {
     { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", status: "disconnected", online: false, lastHeartbeatAt: "2026-06-18T00:00:00Z", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
   eas: [
-    { id: "demo-1", name: "EA ACCESS SCALPER", mentorId: "EA-SCLP-2K9X", isActive: true, distributorName: "Super Admin", isFreeActivation: true },
+    { id: "demo-1", name: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", isActive: true, distributorName: "Super Admin", isFreeActivation: true },
     { id: "demo-2", name: "Gold Scalper Pro", mentorId: "EA-GX4R-8KNP", isActive: true, distributorName: "Bellion FX", isFreeActivation: false },
     { id: "demo-3", name: "Forex Hunter", mentorId: "EA-LM7W-Q2FT", isActive: false, distributorName: "Bellion FX", isFreeActivation: false },
   ],
-  freeActivation: { configured: true, switchable: true, eaId: "demo-1", eaName: "EA ACCESS SCALPER", mentorId: "EA-SCLP-2K9X", active: true, distributorName: "Super Admin", activations: 12 },
+  freeActivation: { configured: true, switchable: true, eaId: "demo-1", eaName: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", active: true, distributorName: "Super Admin", activations: 12 },
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
       { id: "acct-abc", ip: "102.89.x.x", symbols: ["EURUSD", "XAUUSD"], signalsReceived: 64, connectedForSeconds: 3600 },
@@ -221,7 +221,7 @@ export default function AdminPage() {
         eas: (prev.eas || []).map(e => ({ ...e, isFreeActivation: action === "setFreeActivation" && e.id === id })),
         freeActivation: (() => {
           const target = (prev.eas || []).find(e => e.id === id);
-          if (action === "clearFreeActivation" || !target) return { configured: false, switchable: true, expectedName: "EA ACCESS SCALPER" };
+          if (action === "clearFreeActivation" || !target) return { configured: false, switchable: true, expectedName: "EA NAPTUNE SCALPER" };
           return { configured: true, switchable: true, eaId: target.id, eaName: target.name, mentorId: target.mentorId, active: target.isActive, distributorName: target.distributorName, activations: prev.freeActivation?.activations ?? 0 };
         })(),
       } : prev);
@@ -320,7 +320,7 @@ export default function AdminPage() {
               <p className="text-[11px]" style={{ color: "#F59E0B" }}>
                 The switch needs a one-time DB migration. Run{" "}
                 <span className="font-mono">supabase-free-activation-migration.sql</span> in your Supabase SQL editor to enable per-bot selection. Until then it falls back to a bot named{" "}
-                <span className="font-bold">&ldquo;EA ACCESS SCALPER&rdquo;</span> or the <span className="font-mono">FREE_ACTIVATION_MENTOR_ID</span> env var.
+                <span className="font-bold">&ldquo;EA NAPTUNE SCALPER&rdquo;</span> or the <span className="font-mono">FREE_ACTIVATION_MENTOR_ID</span> env var.
               </p>
             </div>
           )}

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Zap, Mail, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Loader2, CheckCircle2 } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 const CARD = "#161B22";
@@ -45,8 +46,9 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center px-6" style={{ background: "#0D1117" }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <Link href="/" className="text-[18px] font-black tracking-wide inline-block">
-            EA <span style={{ color: ACCENT }}>ACCESS</span>
+          <Link href="/" className="inline-flex items-center gap-2 text-[18px] font-black tracking-wide">
+            <Logo size={24} />
+            EA <span style={{ color: ACCENT }}>NAPTUNE</span>
           </Link>
         </div>
 
@@ -66,8 +68,8 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               <div className="text-center mb-7">
-                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(10,132,255,0.1)" }}>
-                  <Zap size={24} style={{ color: ACCENT }} />
+                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(10,132,255,0.08)" }}>
+                  <Logo size={38} />
                 </div>
                 <h1 className="text-xl font-black tracking-wider text-white">RESET PASSWORD</h1>
                 <p className="text-xs mt-1" style={{ color: MUTED }}>We&apos;ll email you a reset link</p>

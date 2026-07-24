@@ -37,7 +37,7 @@ export async function OPTIONS() {
  * POST /api/v1/free-activation
  * Body: { email }
  *
- * Public, mentor-less activation for the flagship "EA ACCESS SCALPER" bot.
+ * Public, mentor-less activation for the flagship "EA NAPTUNE SCALPER" bot.
  * Issues (or re-sends) a license key and emails it. Idempotent: an email that
  * already has a key gets the SAME key resent, never a fresh one, so a legit
  * user's working key is never invalidated by re-submitting. The key is never
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     .select("app_name")
     .eq("distributor_id", ea.distributor_id)
     .maybeSingle();
-  const appName = branding?.app_name || ea.name || "EA ACCESS SCALPER";
+  const appName = branding?.app_name || ea.name || "EA NAPTUNE SCALPER";
 
   const { data: existing } = await supabase
     .from("app_users")

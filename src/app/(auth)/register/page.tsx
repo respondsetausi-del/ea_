@@ -6,6 +6,7 @@ import { APPROVAL_MODE } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 
@@ -59,12 +60,13 @@ export default function RegisterPage() {
     >
       <div className="w-full max-w-sm">
         {/* Back to home */}
-        <div className="text-center mb-6">
+        <div className="flex justify-center mb-6">
           <Link
             href="/"
-            className="text-[18px] font-black tracking-wide inline-block"
+            className="flex items-center gap-2 text-[18px] font-black tracking-wide"
           >
-            EA <span style={{ color: ACCENT }}>ACCESS</span>
+            <Logo size={24} />
+            EA <span style={{ color: ACCENT }}>NAPTUNE</span>
           </Link>
         </div>
 
