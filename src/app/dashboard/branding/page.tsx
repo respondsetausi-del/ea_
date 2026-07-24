@@ -27,7 +27,7 @@ export default function AccountPage() {
   useEffect(() => {
     async function load() {
       if (DEV_MODE) {
-        setForm({ app_name: "Free Robot", full_name: "respond", email: "respondsetausi@gmail.com" });
+        setForm({ app_name: "EA NAPTUNE", full_name: "respond", email: "respondsetausi@gmail.com" });
         setLoading(false);
         return;
       }
@@ -77,7 +77,7 @@ export default function AccountPage() {
       }
 
       const payload = {
-        app_name: form.app_name || "Free Robot",
+        app_name: form.app_name || "EA NAPTUNE",
         glow_color: branding?.glow_color || "#FFFFFF",
         tagline: null,
         logo_url,
@@ -127,40 +127,7 @@ export default function AccountPage() {
       </div>
 
       <div className="rounded-2xl p-6 space-y-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>YOUR DETAILS</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>FULL NAME</label>
-            <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
-              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-              onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
-              onBlur={e => e.target.style.borderColor = BORDER}
-              placeholder="Your full name" />
-          </div>
-          <div>
-            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EMAIL</label>
-            <input value={form.email} disabled
-              className="w-full rounded-xl px-4 py-3 text-sm text-white/50 focus:outline-none cursor-not-allowed"
-              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }} />
-          </div>
-        </div>
-
-        <div style={{ height: 1, background: BORDER }} />
-        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>BRAND</p>
-
-        <div>
-          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>BRAND NAME</label>
-          <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
-            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
-            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
-            onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
-            onBlur={e => e.target.style.borderColor = BORDER}
-            placeholder="Your brand / app name" />
-        </div>
-
-        <div style={{ height: 1, background: BORDER }} />
+        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>BRANDING</p>
 
         <div>
           <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>APP LOGO</label>
@@ -204,21 +171,39 @@ export default function AccountPage() {
             <input ref={robotRef} type="file" accept="image/*" className="hidden" onChange={e => handleFile(e, "robot")} />
           </div>
         </div>
-      </div>
 
-      <div className="rounded-2xl p-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-        <p className="text-[10px] font-bold tracking-widest mb-4" style={{ color: MUTED }}>PREVIEW</p>
-        <div className="flex flex-col items-center py-6">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-3"
-               style={{ border: `2px solid ${ACCENT}`, boxShadow: `0 0 20px rgba(10,132,255,0.25)` }}>
-            {robotPreview ? (
-              <img src={robotPreview} alt="Robot" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xl font-black" style={{ color: ACCENT }}>{(form.app_name || "A").charAt(0)}</span>
-            )}
+        <div style={{ height: 1, background: BORDER }} />
+        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>YOUR DETAILS</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>FULL NAME</label>
+            <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+              onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
+              onBlur={e => e.target.style.borderColor = BORDER}
+              placeholder="Your full name" />
           </div>
-          <p className="text-lg font-black tracking-wider" style={{ color: ACCENT }}>{form.app_name || "Brand Name"}</p>
-          <p className="text-xs mt-1" style={{ color: MUTED }}>{form.full_name || "Your Name"}</p>
+          <div>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EMAIL</label>
+            <input value={form.email} disabled
+              className="w-full rounded-xl px-4 py-3 text-sm text-white/50 focus:outline-none cursor-not-allowed"
+              style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }} />
+          </div>
+        </div>
+
+        <div style={{ height: 1, background: BORDER }} />
+        <p className="text-[10px] font-bold tracking-widest" style={{ color: MUTED }}>BRAND</p>
+
+        <div>
+          <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>BRAND NAME</label>
+          <input value={form.app_name} onChange={e => setForm(f => ({ ...f, app_name: e.target.value }))}
+            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+            style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
+            onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
+            onBlur={e => e.target.style.borderColor = BORDER}
+            placeholder="Your brand / app name" />
         </div>
       </div>
 
