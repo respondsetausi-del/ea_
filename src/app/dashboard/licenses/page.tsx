@@ -11,10 +11,14 @@ const MUTED = "#8B949E";
 const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(10,132,255,0.1)";
 
-function demoKey(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const block = () => Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `FR-${block()}-${block()}-${block()}`;
+// Same alphabet + length as the server's makeLicenseKey (no 0/O/1/I).
+function makeKey(): string {
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(15);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  for (let i = 0; i < 15; i++) out += A[bytes[i] % A.length];
+  return out;
 }
 
 export default function LicensesPage() {
@@ -25,7 +29,6 @@ export default function LicensesPage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ key: string; email: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [callerEmail, setCallerEmail] = useState<string | null>(null);
 
   const load = async () => {
     if (DEV_MODE) {
@@ -38,7 +41,6 @@ export default function LicensesPage() {
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (user.email) setCallerEmail(user.email);
     const { data } = await supabase.from("eas").select("*").eq("distributor_id", user.id).order("created_at", { ascending: false });
     setEAs(data || []);
     setLoading(false);
@@ -49,7 +51,7 @@ export default function LicensesPage() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!form.email.trim()) { setError("Enter the client's email."); return; }
+    if (!form.email.trim()) { setError("Enter the user's email."); return; }
     if (!form.ea_id) { setError("Select an EA."); return; }
     setGenerating(true);
     setResult(null);
@@ -57,8 +59,8 @@ export default function LicensesPage() {
     const email = form.email.trim().toLowerCase();
 
     if (DEV_MODE) {
-      await new Promise(r => setTimeout(r, 500));
-      setResult({ key: demoKey(), email });
+      await new Promise(r => setTimeout(r, 400));
+      setResult({ key: makeKey(), email });
       setGenerating(false);
       return;
     }
@@ -66,39 +68,37 @@ export default function LicensesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setGenerating(false); return; }
 
-    // The key is tied to a client (email) + EA, so ensure that row exists first.
-    let appUserId: string | null = null;
-    const { data: inserted, error: insErr } = await supabase.from("app_users")
-      .insert({ distributor_id: user.id, ea_id: form.ea_id, email })
-      .select("id").single();
-    if (inserted) {
-      appUserId = inserted.id;
-    } else if (insErr?.message.includes("duplicate")) {
-      const { data: existing } = await supabase.from("app_users")
-        .select("id").eq("distributor_id", user.id).eq("ea_id", form.ea_id).eq("email", email).maybeSingle();
-      appUserId = existing?.id ?? null;
-    } else if (insErr) {
-      setError(insErr.message); setGenerating(false); return;
-    }
-    if (!appUserId) { setError("Could not create the client record."); setGenerating(false); return; }
+    // Save the user (so they show in the Users tab) with the key stored on the row.
+    // If they already exist for this EA, we regenerate their key in place.
+    const { data: existing } = await supabase.from("app_users")
+      .select("id").eq("distributor_id", user.id).eq("ea_id", form.ea_id).eq("email", email).maybeSingle();
 
-    try {
-      const res = await fetch("/api/v1/generate-license", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_user_id: appUserId, caller_email: callerEmail }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.license_key) {
-        setResult({ key: data.license_key, email });
-      } else {
-        setError(data.error || "Failed to generate the license key.");
-      }
-    } catch {
-      setError("Something went wrong. Try again.");
-    } finally {
-      setGenerating(false);
+    let key = "";
+    let lastErr: string | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      key = makeKey();
+      const payload = { license_key: key, license_sent_at: new Date().toISOString(), is_active: true };
+      const { error: saveErr } = existing?.id
+        ? await supabase.from("app_users").update(payload).eq("id", existing.id)
+        : await supabase.from("app_users").insert({ distributor_id: user.id, ea_id: form.ea_id, email, ...payload });
+      if (!saveErr) { lastErr = null; break; }
+      lastErr = saveErr.message;
+      // Only a license_key collision is worth retrying; anything else is terminal.
+      if (!/duplicate/i.test(saveErr.message) || !/license_key/i.test(saveErr.message)) break;
     }
+
+    setGenerating(false);
+    if (lastErr) {
+      setError(/duplicate/i.test(lastErr) ? "That user already has a key for this EA." : lastErr);
+      return;
+    }
+    setResult({ key, email });
+  };
+
+  const cancel = () => {
+    setForm({ email: "", ea_id: "" });
+    setResult(null);
+    setError("");
   };
 
   const copy = () => {
@@ -112,19 +112,19 @@ export default function LicensesPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-black tracking-wide text-white">Generate License</h2>
-        <p className="text-sm mt-1" style={{ color: MUTED }}>Fill in the details and generate a key — then copy it and send it to your client.</p>
+        <p className="text-sm mt-1" style={{ color: MUTED }}>Generate a license key, then copy it and send it to your user.</p>
       </div>
 
       <form onSubmit={handleGenerate} className="rounded-2xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>CLIENT EMAIL</label>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>USER EMAIL</label>
             <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
               style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
               onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
               onBlur={e => e.target.style.borderColor = BORDER}
-              placeholder="client@example.com" required />
+              placeholder="user@example.com" required />
           </div>
           <div>
             <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA</label>
@@ -142,12 +142,19 @@ export default function LicensesPage() {
           <p className="text-[11px]" style={{ color: "#F59E0B" }}>Create an EA first before generating a license.</p>
         )}
         {error && <p className="text-red-400 text-xs">{error}</p>}
-        <button type="submit" disabled={generating}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
-          style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(10,132,255,0.3)" }}>
-          {generating ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}
-          {generating ? "Generating…" : "Generate License"}
-        </button>
+        <div className="flex gap-3">
+          <button type="submit" disabled={generating}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
+            style={{ background: ACCENT, boxShadow: "0 4px 16px rgba(10,132,255,0.3)" }}>
+            {generating ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}
+            {generating ? "Generating…" : "Generate"}
+          </button>
+          <button type="button" onClick={cancel}
+            className="px-6 py-2.5 rounded-xl text-sm font-medium transition"
+            style={{ border: `1px solid ${BORDER}`, color: MUTED }}>
+            Cancel
+          </button>
+        </div>
       </form>
 
       {result && (
@@ -164,7 +171,7 @@ export default function LicensesPage() {
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <p className="text-xs mt-4" style={{ color: MUTED }}>Copy this key and send it to your client. They&apos;ll enter their email and this key in the app to activate.</p>
+          <p className="text-xs mt-4" style={{ color: MUTED }}>Copy this key and send it to your user — it&apos;s saved and they now appear under Users. They&apos;ll enter their email and this key in the app to activate.</p>
         </div>
       )}
     </div>
