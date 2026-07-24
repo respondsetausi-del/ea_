@@ -89,7 +89,7 @@ export default function Home() {
         </p>
         <div className="flex flex-col sm:flex-row items-center gap-3.5 mb-12">
           <a
-            href="https://free-app-zw10.onrender.com"
+            href="https://ea-app.onrender.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
@@ -102,19 +102,24 @@ export default function Home() {
             <Smartphone size={18} />
             iOS Version
           </a>
-          <a
-            href="/ea-access.apk"
-            download
-            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
+          <div
+            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border cursor-not-allowed opacity-60 select-none"
             style={{
               color: ACCENT,
               borderColor: "rgba(10,132,255,0.3)",
               background: "rgba(10,132,255,0.06)",
             }}
+            title="Coming soon"
           >
             <Download size={18} />
             Android (APK)
-          </a>
+            <span
+              className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wide"
+              style={{ background: "rgba(10,132,255,0.15)", color: ACCENT }}
+            >
+              COMING SOON
+            </span>
+          </div>
         </div>
       </section>
 

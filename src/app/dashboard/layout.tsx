@@ -26,8 +26,6 @@ const NAV_MANAGE = [
 
 const ADMIN_NAV = { href: "/dashboard/admin", label: "Super Admin", icon: Crown };
 
-const DEV_ONBOARDED_KEY = "dev_onboarded";
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,10 +37,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (DEV_MODE) {
       setUser({ email: DEV_USER.email, name: DEV_USER.user_metadata.name });
       setIsSuperAdmin(true);
-      const onboarded = typeof window !== "undefined" && localStorage.getItem(DEV_ONBOARDED_KEY) === "true";
-      if (!onboarded && pathname !== "/dashboard/start") {
-        router.push("/dashboard/start");
-      }
       return;
     }
     supabase.auth.getUser().then(async ({ data }) => {
@@ -68,11 +62,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!distributor?.verified && !superAdmin) {
         await supabase.auth.signOut();
         router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
-        return;
-      }
-
-      if (!distributor?.onboarded && pathname !== "/dashboard/start") {
-        router.push("/dashboard/start");
         return;
       }
 
