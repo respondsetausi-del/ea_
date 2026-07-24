@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { Bot, Users, Palette, Activity } from "lucide-react";
+import { Bot, Users, KeyRound, Activity } from "lucide-react";
 import Link from "next/link";
 
 const ACCENT = "#0A84FF";
@@ -45,9 +45,9 @@ export default function DashboardOverview() {
   const greeting = hour >= 5 && hour < 12 ? "Good morning" : hour >= 12 && hour < 17 ? "Good afternoon" : "Good evening";
 
   const cards = [
-    { label: "Trading Bots", value: stats.eas, icon: Bot, href: "/dashboard/eas", gradient: "linear-gradient(135deg, rgba(10,132,255,0.15), rgba(10,132,255,0.05))" },
-    { label: "App Users", value: stats.users, icon: Users, href: "/dashboard/users", gradient: "linear-gradient(135deg, rgba(56,189,248,0.15), rgba(56,189,248,0.05))" },
-    { label: "Branding", value: stats.hasBranding ? "Set Up" : "Not Set", icon: Palette, href: "/dashboard/branding", gradient: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05))" },
+    { label: "EAs", value: stats.eas, icon: Bot, href: "/dashboard/eas", gradient: "linear-gradient(135deg, rgba(10,132,255,0.15), rgba(10,132,255,0.05))" },
+    { label: "Users", value: stats.users, icon: Users, href: "/dashboard/users", gradient: "linear-gradient(135deg, rgba(56,189,248,0.15), rgba(56,189,248,0.05))" },
+    { label: "Keys", value: stats.licenses, icon: KeyRound, href: "/dashboard/licenses", gradient: "linear-gradient(135deg, rgba(10,132,255,0.15), rgba(10,132,255,0.05))" },
   ];
 
   return (
@@ -55,7 +55,7 @@ export default function DashboardOverview() {
       <div>
         <h2 className="text-xl font-black tracking-wide text-white">{greeting}</h2>
         <p className="text-sm mt-1" style={{ color: MUTED }}>
-          Welcome to <strong className="text-white">EA Access</strong> — manage your white-label trading app.
+          Welcome to <strong className="text-white">EA NAPTUNE</strong> — manage your white-label trading app.
         </p>
       </div>
 
@@ -93,44 +93,8 @@ export default function DashboardOverview() {
               );
             })}
           </div>
-
-          <div className="rounded-2xl p-6" style={{ background: CARD, border: "1px solid rgba(10,132,255,0.08)" }}>
-            <h3 className="text-sm font-bold text-white mb-3">Quick Start</h3>
-            <div className="space-y-3">
-              <QuickStep num={1} done={stats.eas > 0} label="Create a Trading Bot" desc="Set up an EA with a mentor ID that your users will use to log in" href="/dashboard/eas" />
-              <QuickStep num={2} done={stats.users > 0} label="Invite Users" desc="Add user emails so they can access your branded app" href="/dashboard/users" />
-              <QuickStep num={3} done={stats.licenses > 0} label="Generate License" desc="Issue an access key to a user, it's emailed straight to them" href="/dashboard/licenses" />
-              <QuickStep num={4} done={stats.hasBranding} label="Set up your branding" desc="Upload your logo, robot image, and choose your app name & colors" href="/dashboard/branding" />
-            </div>
-          </div>
         </>
       )}
     </div>
-  );
-}
-
-function QuickStep({ num, done, label, desc, href }: { num: number; done: boolean; label: string; desc: string; href: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-start gap-4 p-3 rounded-xl transition"
-      style={{ background: "transparent" }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-    >
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-        style={{
-          background: done ? "rgba(10,132,255,0.12)" : "rgba(255,255,255,0.06)",
-          color: done ? "#0A84FF" : "#8B949E",
-        }}
-      >
-        {done ? "✓" : num}
-      </div>
-      <div>
-        <p className="text-sm font-semibold" style={{ color: done ? "#0A84FF" : "#F0F6FC" }}>{label}</p>
-        <p className="text-xs mt-0.5" style={{ color: "#8B949E" }}>{desc}</p>
-      </div>
-    </Link>
   );
 }

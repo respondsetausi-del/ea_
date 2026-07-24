@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { Plus, Trash2, Power, PowerOff, Copy, Check } from "lucide-react";
+import { Plus, Trash2, Play, Pause } from "lucide-react";
 import type { EA } from "@/lib/database.types";
 
 const ACCENT = "#0A84FF";
@@ -27,7 +27,6 @@ export default function EAsPage() {
   const [form, setForm] = useState({ name: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState<string | null>(null);
 
   const load = async () => {
     if (DEV_MODE) {
@@ -92,18 +91,12 @@ export default function EAsPage() {
     load();
   };
 
-  const copyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black tracking-wide text-white">Trading Bots</h2>
-          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs. Each bot gets an auto-generated EA ID.</p>
+          <h2 className="text-xl font-black tracking-wide text-white">EAs</h2>
+          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs.</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -159,7 +152,7 @@ export default function EAsPage() {
         </div>
       ) : eas.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-sm" style={{ color: MUTED }}>No trading bots yet. Create one to get started.</p>
+          <p className="text-sm" style={{ color: MUTED }}>No EAs yet. Create one to get started.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -184,20 +177,14 @@ export default function EAsPage() {
                     {ea.is_active ? "ACTIVE" : "INACTIVE"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-mono" style={{ color: MUTED }}>EA ID: {ea.mentor_id}</span>
-                  <button onClick={() => copyKey(ea.mentor_id)} className="transition" style={{ color: MUTED }}>
-                    {copied === ea.mentor_id ? <Check size={12} style={{ color: ACCENT }} /> : <Copy size={12} />}
-                  </button>
-                </div>
                 {ea.description && <p className="text-xs mt-1 truncate" style={{ color: MUTED }}>{ea.description}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleActive(ea)}
                   className="p-2 rounded-lg transition"
                   style={{ color: ea.is_active ? ACCENT : MUTED }}
-                  title={ea.is_active ? "Deactivate" : "Activate"}>
-                  {ea.is_active ? <Power size={16} /> : <PowerOff size={16} />}
+                  title={ea.is_active ? "Pause" : "Start"}>
+                  {ea.is_active ? <Pause size={16} /> : <Play size={16} />}
                 </button>
                 <button onClick={() => deleteEA(ea.id)}
                   className="p-2 rounded-lg transition hover:text-red-400"
