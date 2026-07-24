@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Free Robot — Distributor Dashboard",
+  title: "EA NAPTUNE — Distributor Dashboard",
   description: "White-label your trading bot, manage EAs, and control user access.",
 };
 
