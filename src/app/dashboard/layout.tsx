@@ -14,13 +14,13 @@ const CARD = "#161B22";
 const MUTED = "#8B949E";
 
 const NAV_MAIN = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/eas", label: "Trading Bots", icon: Bot },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/eas", label: "EAs", icon: Bot },
   { href: "/dashboard/users", label: "Users", icon: Users },
 ];
 
 const NAV_MANAGE = [
-  { href: "/dashboard/licenses", label: "Generate License", icon: KeyRound },
+  { href: "/dashboard/licenses", label: "Keys", icon: KeyRound },
   { href: "/dashboard/branding", label: "Account", icon: UserCircle },
 ];
 
