@@ -74,16 +74,6 @@ export default function Home() {
         <div className="mb-7">
           <Logo size={118} />
         </div>
-        <div
-          className="px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-[2px] mb-5 border"
-          style={{
-            color: ACCENT,
-            background: "rgba(10,132,255,0.12)",
-            borderColor: "rgba(10,132,255,0.25)",
-          }}
-        >
-          100% FREE
-        </div>
         <h1 className="text-[42px] sm:text-[52px] font-black text-center leading-[1.15] tracking-tight mb-5">
           Mobile EA{"\n"}
           <br className="sm:hidden" />
@@ -392,8 +382,8 @@ export default function Home() {
             style={{ color: "#8B949E" }}
           >
             Join thousands of traders using EA Naptune to run their Expert
-            Advisors from anywhere. No setup fees, no VPS costs — just seamless
-            mobile trading.
+            Advisors from anywhere — no VPS needed, just seamless mobile
+            trading.
           </p>
           <Link
             href="/register"
@@ -404,7 +394,7 @@ export default function Home() {
             }}
           >
             <ArrowRight size={18} />
-            Get Started Free
+            Get Started
           </Link>
         </div>
       </section>
@@ -421,7 +411,7 @@ export default function Home() {
               EA <span style={{ color: ACCENT }}>NAPTUNE</span>
             </span>
             <p className="text-[12px] mt-1" style={{ color: "#8B949E" }}>
-              Free Mobile EA Trading
+              Mobile EA Trading Automation
             </p>
           </div>
           <div className="flex items-center gap-3 mb-4">
