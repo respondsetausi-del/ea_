@@ -71,6 +71,9 @@ export default function Home() {
             "radial-gradient(ellipse at top, rgba(10,132,255,0.08) 0%, transparent 60%)",
         }}
       >
+        <div className="mb-7">
+          <Logo size={118} />
+        </div>
         <div
           className="px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-[2px] mb-5 border"
           style={{
