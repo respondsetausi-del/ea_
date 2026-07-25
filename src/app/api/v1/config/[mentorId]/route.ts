@@ -24,6 +24,14 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
+/**
+ * GET /api/v1/config/{mentorId}?email=
+ *
+ * The Mentor ID is the DISTRIBUTOR's number (distributors.mentor_number). This
+ * confirms the Mentor ID is valid and — when an email is given — whether that
+ * email is an active user under that distributor. Returns the distributor's
+ * branding (and a representative EA) for the app to render.
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ mentorId: string }> }
@@ -36,48 +44,61 @@ export async function GET(
   const { mentorId } = await params;
   const email = req.nextUrl.searchParams.get("email");
 
-  const { data: ea, error: eaError } = await supabase
-    .from("eas")
-    .select("*")
-    .eq("mentor_id", mentorId)
-    .eq("is_active", true)
-    .single();
+  // Mentor ID is a plain number.
+  if (!/^\d+$/.test((mentorId || "").trim())) {
+    return corsJson({ error: "Invalid Mentor ID" }, { status: 404 });
+  }
+  const num = parseInt(mentorId.trim(), 10);
 
-  if (eaError || !ea) {
-    return corsJson({ error: "EA not found or inactive" }, { status: 404 });
+  const { data: distributor, error: distErr } = await supabase
+    .from("distributors")
+    .select("id, name, is_active")
+    .eq("mentor_number", num)
+    .maybeSingle();
+
+  if (distErr || !distributor || distributor.is_active === false) {
+    return corsJson({ error: "Mentor ID not found" }, { status: 404 });
   }
 
   const { data: branding } = await supabase
     .from("branding")
     .select("*")
-    .eq("distributor_id", ea.distributor_id)
-    .single();
+    .eq("distributor_id", distributor.id)
+    .maybeSingle();
+
+  // A representative EA (first active) for display.
+  const { data: ea } = await supabase
+    .from("eas")
+    .select("id, name, description, mentor_id")
+    .eq("distributor_id", distributor.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   let user_authorized: boolean | null = null;
   if (email) {
-    const { data: appUser } = await supabase
+    const { data: appUsers } = await supabase
       .from("app_users")
-      .select("id, is_active")
-      .eq("ea_id", ea.id)
+      .select("id")
+      .eq("distributor_id", distributor.id)
       .eq("email", email.toLowerCase())
-      .single();
-    user_authorized = !!(appUser?.is_active);
-
-    if (appUser) {
+      .eq("is_active", true);
+    const ids = (appUsers || []).map((u) => u.id);
+    user_authorized = ids.length > 0;
+    if (ids.length > 0) {
       await supabase
         .from("app_users")
         .update({ last_seen: new Date().toISOString() })
-        .eq("id", appUser.id);
+        .in("id", ids);
     }
   }
 
   return corsJson({
-    ea: {
-      id: ea.id,
-      name: ea.name,
-      description: ea.description,
-      mentor_id: ea.mentor_id,
-    },
+    mentor: { name: distributor.name },
+    ea: ea
+      ? { id: ea.id, name: ea.name, description: ea.description, mentor_id: ea.mentor_id }
+      : null,
     branding: branding
       ? {
           app_name: branding.app_name,

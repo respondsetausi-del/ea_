@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { Plus, Trash2, Play, Pause, Copy, Check } from "lucide-react";
+import { Plus, Trash2, Play, Pause } from "lucide-react";
 import type { EA } from "@/lib/database.types";
 
 const ACCENT = "#0A84FF";
@@ -27,13 +27,6 @@ export default function EAsPage() {
   const [form, setForm] = useState({ name: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState<string | null>(null);
-
-  const copyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  };
 
   const load = async () => {
     if (DEV_MODE) {
@@ -103,7 +96,7 @@ export default function EAsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black tracking-wide text-white">EAs</h2>
-          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs. Share an EA&apos;s Mentor ID with your users so they can log in.</p>
+          <p className="text-sm mt-1" style={{ color: MUTED }}>Create and manage your EAs.</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -183,13 +176,6 @@ export default function EAsPage() {
                   >
                     {ea.is_active ? "ACTIVE" : "INACTIVE"}
                   </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[9px] font-bold tracking-widest" style={{ color: MUTED }}>MENTOR ID</span>
-                  <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: "rgba(10,132,255,0.1)", color: ACCENT }}>{ea.mentor_id}</span>
-                  <button onClick={() => copyKey(ea.mentor_id)} className="transition" style={{ color: MUTED }} title="Copy Mentor ID">
-                    {copied === ea.mentor_id ? <Check size={12} style={{ color: ACCENT }} /> : <Copy size={12} />}
-                  </button>
                 </div>
                 {ea.description && <p className="text-xs mt-1 truncate" style={{ color: MUTED }}>{ea.description}</p>}
               </div>

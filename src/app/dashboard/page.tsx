@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
-import { Bot, Users, KeyRound, Activity } from "lucide-react";
+import { Bot, Users, KeyRound, Activity, Copy, Check } from "lucide-react";
 import Link from "next/link";
 
 const ACCENT = "#0A84FF";
@@ -11,23 +11,27 @@ const MUTED = "#8B949E";
 
 export default function DashboardOverview() {
   const [stats, setStats] = useState({ eas: 0, users: 0, licenses: 0, hasBranding: false });
+  const [me, setMe] = useState<{ name: string; mentorNumber: number | null }>({ name: "", mentorNumber: null });
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       if (DEV_MODE) {
         setStats({ eas: 2, users: 5, licenses: 3, hasBranding: true });
+        setMe({ name: "Respond", mentorNumber: 1 });
         setLoading(false);
         return;
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [easRes, usersRes, licRes, brandRes] = await Promise.all([
+      const [easRes, usersRes, licRes, brandRes, meRes] = await Promise.all([
         supabase.from("eas").select("id", { count: "exact", head: true }).eq("distributor_id", user.id),
         supabase.from("app_users").select("id", { count: "exact", head: true }).eq("distributor_id", user.id),
         supabase.from("app_users").select("id", { count: "exact", head: true }).eq("distributor_id", user.id).not("license_sent_at", "is", null),
         supabase.from("branding").select("id").eq("distributor_id", user.id).maybeSingle(),
+        supabase.from("distributors").select("name, mentor_number").eq("id", user.id).maybeSingle(),
       ]);
 
       setStats({
@@ -36,6 +40,8 @@ export default function DashboardOverview() {
         licenses: licRes.count || 0,
         hasBranding: !!brandRes.data,
       });
+      const meData = meRes.data as { name?: string; mentor_number?: number } | null;
+      setMe({ name: meData?.name || "", mentorNumber: meData?.mentor_number ?? null });
       setLoading(false);
     }
     load();
@@ -53,7 +59,7 @@ export default function DashboardOverview() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-black tracking-wide text-white">{greeting}</h2>
+        <h2 className="text-xl font-black tracking-wide text-white">{greeting}{me.name ? `, ${me.name}` : ""}</h2>
         <p className="text-sm mt-1" style={{ color: MUTED }}>
           Welcome to <strong className="text-white">EA NAPTUNE</strong> — manage your white-label trading app.
         </p>
@@ -65,6 +71,25 @@ export default function DashboardOverview() {
         </div>
       ) : (
         <>
+          <div
+            className="rounded-2xl p-5 flex items-center justify-between"
+            style={{ background: "linear-gradient(135deg, rgba(10,132,255,0.14), rgba(22,27,34,0.9))", border: "1px solid rgba(10,132,255,0.25)" }}
+          >
+            <div>
+              <p className="text-[10px] font-bold tracking-widest" style={{ color: ACCENT }}>YOUR MENTOR ID</p>
+              <p className="text-4xl font-black text-white mt-1 leading-none">{me.mentorNumber ?? "—"}</p>
+              <p className="text-xs mt-2" style={{ color: MUTED }}>Give this to your users — they enter it to log in to the app.</p>
+            </div>
+            <button
+              onClick={() => { if (me.mentorNumber != null) { navigator.clipboard.writeText(String(me.mentorNumber)); setCopied(true); setTimeout(() => setCopied(false), 2000); } }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+              style={{ background: "rgba(10,132,255,0.15)", color: ACCENT, border: "1px solid rgba(10,132,255,0.3)" }}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {cards.map(card => {
               const Icon = card.icon;
