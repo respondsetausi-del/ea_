@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { APPROVAL_MODE } from "@/lib/config";
+import { APPROVAL_MODE, REQUIRE_VERIFICATION } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
@@ -37,6 +37,14 @@ export default function RegisterPage() {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Open mode: no approval/verification gate — go straight into the dashboard.
+    // (Requires Supabase Auth "Confirm email" to be OFF so signUp returns a session.)
+    if (!REQUIRE_VERIFICATION) {
+      router.push("/dashboard");
+      return;
+    }
+
     if (!APPROVAL_MODE) {
       try {
         await fetch("/api/v1/send-verification", {

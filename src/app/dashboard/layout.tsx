@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
+import { REQUIRE_VERIFICATION } from "@/lib/config";
 import Link from "next/link";
 import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, UserCircle } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -59,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       const superAdmin = await isSuperAdminNow(data.user.email);
 
-      if (!distributor?.verified && !superAdmin) {
+      if (REQUIRE_VERIFICATION && !distributor?.verified && !superAdmin) {
         await supabase.auth.signOut();
         router.push(`/pending?email=${encodeURIComponent(data.user.email || "")}`);
         return;

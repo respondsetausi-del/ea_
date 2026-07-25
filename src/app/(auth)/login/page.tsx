@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
 import { track } from "@/lib/track";
-import { APPROVAL_MODE } from "@/lib/config";
+import { APPROVAL_MODE, REQUIRE_VERIFICATION } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -50,7 +50,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (!distributor?.verified && !(await isSuperAdminNow(data.user?.email))) {
+    if (REQUIRE_VERIFICATION && !distributor?.verified && !(await isSuperAdminNow(data.user?.email))) {
       await supabase.auth.signOut();
       setError(APPROVAL_MODE
         ? "Your account is awaiting administrator approval. You'll be able to sign in once it's approved."
