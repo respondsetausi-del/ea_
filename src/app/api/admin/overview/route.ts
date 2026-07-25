@@ -91,6 +91,18 @@ export async function GET(req: NextRequest) {
   const easById = new Map(easList.map(e => [e.id, e]));
   const distById = new Map((distributors || []).map(d => [d.id, d]));
 
+  // How each user got access: 'payment' (came through Stripe → register) vs
+  // 'manual' (added by a mentor, no payment). The column may not exist before
+  // the migration runs, so query defensively and default to 'manual'.
+  const accessRes = await supabase.from("app_users").select("id, access_via");
+  const accessById = new Map<string, string>();
+  if (!accessRes.error && accessRes.data) {
+    for (const r of accessRes.data as Array<{ id: string; access_via?: string }>) {
+      accessById.set(r.id, r.access_via || "manual");
+    }
+  }
+  const accessVia = (id: string) => accessById.get(id) || "manual";
+
   const distributorRows = (distributors || []).map(d => ({
     id: d.id,
     email: d.email,
@@ -115,6 +127,7 @@ export async function GET(req: NextRequest) {
     hasLicense: !!u.license_key,
     licenseSentAt: u.license_sent_at,
     createdAt: u.created_at,
+    accessVia: accessVia(u.id),
   }));
 
   // Live status: an account is "online" only if it's marked connected AND its
@@ -201,6 +214,13 @@ export async function GET(req: NextRequest) {
       active30d: countSince(mt5Conns || [], c => c.last_connected_at as string, monthAgo),
     },
     traffic: buildTraffic(events || [], startOfToday, weekAgo, monthAgo),
+    payments: {
+      paid: usersList.filter(u => accessVia(u.id) === "payment").length,
+      free: usersList.filter(u => accessVia(u.id) !== "payment").length,
+      paidToday: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= startOfToday).length,
+      paidWeek: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= weekAgo).length,
+      paidMonth: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= monthAgo).length,
+    },
   };
 
   const stats = {
@@ -209,6 +229,8 @@ export async function GET(req: NextRequest) {
     suspendedDistributors: distributorRows.filter(d => !d.isActive).length,
     eas: easList.length,
     appUsers: appUserRows.length,
+    paidUsers: appUserRows.filter(u => u.accessVia === "payment").length,
+    freeAccessUsers: appUserRows.filter(u => u.accessVia !== "payment").length,
     licensesIssued: appUserRows.filter(u => u.hasLicense).length,
     connectedAccounts: mt5Connections.length,
     onlineAccounts: mt5Connections.filter(c => c.online).length,

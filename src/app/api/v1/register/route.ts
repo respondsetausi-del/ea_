@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
   const { error: insErr } = await supabase
     .from("app_users")
-    .insert({ distributor_id: distributor.id, ea_id: ea.id, email, is_active: true });
+    .insert({ distributor_id: distributor.id, ea_id: ea.id, email, is_active: true, access_via: "payment" });
   if (insErr) {
     console.error("[register] insert error:", insErr);
     return corsJson({ error: "Could not register" }, { status: 500 });

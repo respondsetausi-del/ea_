@@ -36,6 +36,7 @@ type Distributor = {
 type AppUser = {
   id: string; email: string; isActive: boolean; distributorName: string;
   eaName: string; hasLicense: boolean; licenseSentAt: string | null; createdAt: string;
+  accessVia: string;
 };
 type Admin = {
   email: string; registered: boolean; name: string | null;
@@ -53,6 +54,7 @@ type Analytics = {
   bots: { total: number; active: number };
   connections: { total: number; online: number; offline: number; active24h: number; active7d: number; active30d: number };
   traffic: { visitsToday: number; visitsWeek: number; visitsMonth: number; uniqueToday: number; uniqueWeek: number; uniqueMonth: number; returningMonth: number; loginsToday: number; loginsWeek: number; loginsMonth: number };
+  payments: { paid: number; free: number; paidToday: number; paidWeek: number; paidMonth: number };
 };
 type FreeActivation = {
   configured: boolean;
@@ -82,7 +84,7 @@ type Overview = {
 };
 
 const DEMO: Overview = {
-  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, licensesIssued: 3, connectedAccounts: 2, onlineAccounts: 1 },
+  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, paidUsers: 3, freeAccessUsers: 2, licensesIssued: 3, connectedAccounts: 2, onlineAccounts: 1 },
   analytics: {
     mentors: { total: 3, active: 2, verified: 2, newToday: 0, newWeek: 1, newMonth: 2 },
     users: { total: 5, active: 4, newToday: 1, newWeek: 2, newMonth: 4, seen24h: 2, seen7d: 3, seen30d: 4 },
@@ -90,6 +92,7 @@ const DEMO: Overview = {
     bots: { total: 4, active: 3 },
     connections: { total: 2, online: 1, offline: 1, active24h: 1, active7d: 2, active30d: 2 },
     traffic: { visitsToday: 42, visitsWeek: 310, visitsMonth: 1180, uniqueToday: 30, uniqueWeek: 190, uniqueMonth: 640, returningMonth: 145, loginsToday: 8, loginsWeek: 44, loginsMonth: 160 },
+    payments: { paid: 3, free: 2, paidToday: 1, paidWeek: 2, paidMonth: 3 },
   },
   distributors: [
     { id: "d1", email: "respondsetausi@gmail.com", name: "Super Admin", verified: true, onboarded: true, isSuperAdmin: true, isActive: true, createdAt: "2025-01-01T00:00:00Z", eaCount: 2, userCount: 3, licensesSent: 2 },
@@ -97,8 +100,8 @@ const DEMO: Overview = {
     { id: "d3", email: "pending@example.com", name: "New Distributor", verified: false, onboarded: false, isSuperAdmin: false, isActive: false, createdAt: "2025-05-01T00:00:00Z", eaCount: 1, userCount: 0, licensesSent: 0 },
   ],
   appUsers: [
-    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z" },
-    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z" },
+    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z", accessVia: "payment" },
+    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z", accessVia: "manual" },
   ],
   admins: [
     { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true, isOwner: true },
@@ -395,6 +398,13 @@ export default function AdminPage() {
             ["Sent this week", data.analytics.licenses.sentWeek],
             ["Sent this month", data.analytics.licenses.sentMonth],
           ]} />
+          <AnalyticsGroup title="Payments" items={[
+            ["Paid users", data.analytics.payments.paid],
+            ["Free access", data.analytics.payments.free],
+            ["Paid today", data.analytics.payments.paidToday],
+            ["Paid this week", data.analytics.payments.paidWeek],
+            ["Paid this month", data.analytics.payments.paidMonth],
+          ]} />
           <AnalyticsGroup title="Bots & Connections" items={[
             ["Hosted bots", data.analytics.bots.total],
             ["Active bots", data.analytics.bots.active],
@@ -557,6 +567,7 @@ export default function AdminPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-white truncate">{u.email}</p>
+                  {u.accessVia === "payment" ? <Tag color="green">PAID</Tag> : <Tag color="amber">FREE ACCESS</Tag>}
                   {u.hasLicense ? <Tag color="green">LICENSED</Tag> : <Tag color="gray">NO KEY</Tag>}
                   {!u.isActive && <Tag color="red">DISABLED</Tag>}
                 </div>
