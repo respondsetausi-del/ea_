@@ -11,22 +11,27 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  const report: Record<string, unknown> = {
-    hasUrl: !!url,
-    urlValue: url || null, // NEXT_PUBLIC → already shipped to the browser, safe
-    urlLooksValid: !!url && /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url),
-    hasServiceKey: !!key,
-    serviceKeyType: !key
+  const classify = (v?: string) =>
+    !v
       ? "MISSING"
-      : key.startsWith("sb_secret")
-      ? "secret (correct)"
-      : key.startsWith("sb_publishable")
-      ? "PUBLISHABLE — WRONG, use the Secret key"
-      : key.startsWith("eyJ")
-      ? "legacy JWT (ok)"
-      : "unknown format",
+      : v.startsWith("https://") && v.includes(".supabase.co")
+      ? "URL (belongs in NEXT_PUBLIC_SUPABASE_URL)"
+      : v.startsWith("sb_publishable")
+      ? "publishable key (belongs in ANON_KEY)"
+      : v.startsWith("sb_secret")
+      ? "secret key (belongs in SERVICE_ROLE_KEY)"
+      : v.startsWith("eyJ")
+      ? "legacy JWT"
+      : "unknown format";
+
+  const report: Record<string, unknown> = {
+    NEXT_PUBLIC_SUPABASE_URL_value: url || null, // public var, safe to echo
+    NEXT_PUBLIC_SUPABASE_URL_looksValid: !!url && /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY_type: classify(anon),
+    SUPABASE_SERVICE_ROLE_KEY_type: classify(key),
   };
 
   if (!url || !key) {
