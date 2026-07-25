@@ -27,11 +27,28 @@ export async function GET() {
       ? "legacy JWT"
       : "unknown format";
 
+  // A Supabase legacy JWT (anon/service_role) carries the project ref in its
+  // payload — so we can hand back the EXACT project URL to paste.
+  const deriveUrl = (jwt?: string): string | null => {
+    if (!jwt || !jwt.startsWith("eyJ")) return null;
+    try {
+      const payload = JSON.parse(
+        Buffer.from(jwt.split(".")[1], "base64").toString("utf8")
+      );
+      return payload?.ref ? `https://${payload.ref}.supabase.co` : null;
+    } catch {
+      return null;
+    }
+  };
+
   const report: Record<string, unknown> = {
     NEXT_PUBLIC_SUPABASE_URL_value: url || null, // public var, safe to echo
     NEXT_PUBLIC_SUPABASE_URL_looksValid: !!url && /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url),
     NEXT_PUBLIC_SUPABASE_ANON_KEY_type: classify(anon),
     SUPABASE_SERVICE_ROLE_KEY_type: classify(key),
+    CORRECT_URL_paste_this_into_NEXT_PUBLIC_SUPABASE_URL:
+      deriveUrl(anon) || deriveUrl(key) ||
+      "(could not derive — copy Project URL from Supabase → Settings → Data API)",
   };
 
   if (!url || !key) {
