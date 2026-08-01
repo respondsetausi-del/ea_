@@ -112,10 +112,11 @@ export async function GET(req: NextRequest) {
     paid_at?: string | null;
     approved_at?: string | null;
     approved_by?: string | null;
+    first_login_at?: string | null;
   };
   const approvalRes = await supabase
     .from("app_users")
-    .select("id, status, paid_at, approved_at, approved_by");
+    .select("id, status, paid_at, approved_at, approved_by, first_login_at");
   const approvalById = new Map<string, ApprovalRow>();
   if (!approvalRes.error && approvalRes.data) {
     for (const r of approvalRes.data as ApprovalRow[]) approvalById.set(r.id, r);
@@ -152,6 +153,10 @@ export async function GET(req: NextRequest) {
     paidAt: approvalById.get(u.id)?.paid_at || null,
     approvedAt: approvalById.get(u.id)?.approved_at || null,
     approvedBy: approvalById.get(u.id)?.approved_by || null,
+    // last_seen is stamped by /api/v1/authorize on every successful app login,
+    // so a null firstLoginAt means the client has never actually got in.
+    firstLoginAt: approvalById.get(u.id)?.first_login_at || null,
+    lastSeen: (u.last_seen as string) || null,
   }));
 
   // Requests awaiting a decision, newest first — the super admin's inbox.
@@ -324,5 +329,12 @@ export async function GET(req: NextRequest) {
 
   const mqtt = await fetchMqtt();
 
-  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, admins, eas: easRows, mt5Connections, instantActivation, mqtt });
+  // Platform settings. Defaults to require-payment when the table or row is
+  // missing, matching /api/v1/authorize.
+  let requirePayment = true;
+  const settingRes = await supabase
+    .from("app_settings").select("value").eq("key", "require_payment").maybeSingle();
+  if (!settingRes.error && settingRes.data) requirePayment = settingRes.data.value !== false;
+
+  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, admins, eas: easRows, mt5Connections, instantActivation, mqtt, settings: { requirePayment } });
 }

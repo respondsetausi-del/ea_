@@ -39,6 +39,7 @@ type AppUser = {
   accessVia: string;
   status: "pending" | "approved" | "rejected";
   paidAt: string | null; approvedAt: string | null; approvedBy: string | null;
+  firstLoginAt: string | null; lastSeen: string | null;
 };
 type Admin = {
   email: string; registered: boolean; name: string | null;
@@ -79,6 +80,7 @@ type Overview = {
   distributors: Distributor[];
   appUsers: AppUser[];
   pendingRequests?: AppUser[];
+  settings?: { requirePayment: boolean };
   admins: Admin[];
   eas?: EARow[];
   mt5Connections: ConnectedAccount[];
@@ -103,12 +105,12 @@ const DEMO: Overview = {
     { id: "d3", email: "pending@example.com", name: "New Distributor", verified: false, onboarded: false, isSuperAdmin: false, isActive: false, createdAt: "2025-05-01T00:00:00Z", eaCount: 1, userCount: 0, licensesSent: 0 },
   ],
   appUsers: [
-    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z", accessVia: "payment", status: "approved", paidAt: "2025-03-01T00:00:00Z", approvedAt: "2025-03-02T00:00:00Z", approvedBy: "respondsetausi@gmail.com" },
-    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z", accessVia: "manual", status: "approved", paidAt: null, approvedAt: "2025-03-11T00:00:00Z", approvedBy: "respondsetausi@gmail.com" },
+    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z", accessVia: "payment", status: "approved", paidAt: "2025-03-01T00:00:00Z", approvedAt: "2025-03-02T00:00:00Z", approvedBy: "respondsetausi@gmail.com", firstLoginAt: "2025-03-02T09:00:00Z", lastSeen: "2026-07-30T08:00:00Z" },
+    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z", accessVia: "manual", status: "approved", paidAt: null, approvedAt: "2025-03-11T00:00:00Z", approvedBy: "respondsetausi@gmail.com", firstLoginAt: null, lastSeen: null },
   ],
   pendingRequests: [
-    { id: "p1", email: "newclient@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-29T00:00:00Z", accessVia: "payment", status: "pending", paidAt: "2026-07-29T10:00:00Z", approvedAt: null, approvedBy: null },
-    { id: "p2", email: "waiting@example.com", isActive: false, distributorName: "Super Admin", eaName: "EA NAPTUNE SCALPER", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-28T00:00:00Z", accessVia: "manual", status: "pending", paidAt: null, approvedAt: null, approvedBy: null },
+    { id: "p1", email: "newclient@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-29T00:00:00Z", accessVia: "payment", status: "pending", paidAt: "2026-07-29T10:00:00Z", approvedAt: null, approvedBy: null, firstLoginAt: null, lastSeen: null },
+    { id: "p2", email: "waiting@example.com", isActive: false, distributorName: "Super Admin", eaName: "EA NAPTUNE SCALPER", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-28T00:00:00Z", accessVia: "manual", status: "pending", paidAt: null, approvedAt: null, approvedBy: null, firstLoginAt: null, lastSeen: null },
   ],
   admins: [
     { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true, isOwner: true },
@@ -172,7 +174,13 @@ export default function AdminPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  const act = async (type: "distributor" | "app_user", id: string, action: string, confirmMsg?: string) => {
+  const act = async (
+    type: "distributor" | "app_user" | "settings",
+    id: string,
+    action: string,
+    confirmMsg?: string,
+    value?: boolean,
+  ) => {
     if (confirmMsg && !confirm(confirmMsg)) return;
     setBusy(`${id}:${action}`);
     if (DEV_MODE) {
@@ -185,7 +193,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ type, id, action }),
+        body: JSON.stringify({ type, id, action, ...(value !== undefined && { value }) }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) alert(j.error || "Action failed");
@@ -566,6 +574,48 @@ export default function AdminPage() {
         </div>
       </Section>
 
+      {/* Payment gate: when off, Stripe never appears in the app and approval
+          alone grants access. Takes effect on the client's next access check. */}
+      <Section title="Payment" icon={KeyRound}>
+        <div className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-white">Require payment</p>
+              {data.settings?.requirePayment === false
+                ? <Tag color="amber">OFF</Tag>
+                : <Tag color="green">ON</Tag>}
+            </div>
+            <p className="text-[11px]" style={{ color: MUTED }}>
+              {data.settings?.requirePayment === false
+                ? "Stripe is hidden in the app. Approved clients get in without paying."
+                : "Unapproved clients are shown Stripe checkout in the app before they can be approved."}
+            </p>
+          </div>
+          <button
+            onClick={() => act(
+              "settings",
+              "require_payment",
+              "setRequirePayment",
+              data.settings?.requirePayment === false
+                ? "Turn payment back ON? New clients will be asked to pay in the app."
+                : "Turn payment OFF? Clients will get access on approval alone, without paying.",
+              data.settings?.requirePayment === false,
+            )}
+            disabled={isBusy("require_payment", "setRequirePayment")}
+            className="px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-50"
+            style={{
+              background: data.settings?.requirePayment === false ? ACCENT : "rgba(255,255,255,0.06)",
+              color: data.settings?.requirePayment === false ? "#000" : "#fff",
+              border: `1px solid ${BORDER}`,
+            }}
+          >
+            {isBusy("require_payment", "setRequirePayment")
+              ? "Saving…"
+              : data.settings?.requirePayment === false ? "Turn payment ON" : "Turn payment OFF"}
+          </button>
+        </div>
+      </Section>
+
       {/* Client requests: mentors add clients as pending; payment status shows
           here so the decision to approve can be made in one place. */}
       <Section title={`Client Requests${(data.pendingRequests?.length ?? 0) > 0 ? ` (${data.pendingRequests!.length})` : ""}`} icon={UserPlus}>
@@ -620,8 +670,12 @@ export default function AdminPage() {
                   {u.status === "rejected" && <Tag color="red">REJECTED</Tag>}
                   {u.hasLicense ? <Tag color="green">LICENSED</Tag> : <Tag color="gray">NO KEY</Tag>}
                   {!u.isActive && u.status !== "pending" && <Tag color="red">DISABLED</Tag>}
+                  {u.firstLoginAt ? <Tag color="green">LOGGED IN</Tag> : <Tag color="gray">NEVER LOGGED IN</Tag>}
                 </div>
-                <p className="text-[11px] truncate" style={{ color: MUTED }}>{u.distributorName} · {u.eaName}</p>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>
+                  {u.distributorName} · {u.eaName}
+                  {u.lastSeen ? ` · last seen ${new Date(u.lastSeen).toLocaleString()}` : " · never opened the app"}
+                </p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <ActionBtn busy={isBusy(u.id, "resendLicense")} onClick={() => act("app_user", u.id, "resendLicense")} icon={Send} title={u.hasLicense ? "Resend license" : "Issue license"} />

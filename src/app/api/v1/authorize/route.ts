@@ -31,6 +31,7 @@ type AppUserRow = {
   is_active: boolean;
   paid_at: string | null;
   license_key: string | null;
+  first_login_at: string | null;
 };
 
 /**
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   // approved row so a second mentor's pending entry can't lock them out.
   const { data, error } = await supabase
     .from("app_users")
-    .select("id, email, status, is_active, paid_at, license_key")
+    .select("id, email, status, is_active, paid_at, license_key, first_login_at")
     .ilike("email", email);
 
   if (error) {
@@ -75,20 +76,39 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Lookup failed" }, { status: 500 });
   }
 
+  // Super-admin switch: when payment is off, the app never shows Stripe and
+  // approval alone decides access. Defaults to true if the settings table or
+  // row is missing, so a missing migration can't accidentally make it free.
+  let requirePayment = true;
+  const settingRes = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "require_payment")
+    .maybeSingle();
+  if (!settingRes.error && settingRes.data) {
+    requirePayment = settingRes.data.value !== false;
+  }
+
   const rows = (data || []) as AppUserRow[];
   if (rows.length === 0) {
     // Nobody has added this client yet → the app sends them to checkout.
-    return corsJson({ found: false, status: "unknown", authorized: false, paid: false });
+    return corsJson({ found: false, status: "unknown", authorized: false, paid: false, requirePayment });
   }
 
   const approved = rows.find(r => r.status === "approved" && r.is_active);
   const chosen = approved || rows.find(r => r.status === "pending") || rows[0];
   const paid = rows.some(r => !!r.paid_at);
 
+  // last_seen doubles as "has this client ever actually logged in?" — the
+  // dashboard shows "Never logged in" while it is null. Only stamped for an
+  // authorized client so a rejected/pending attempt doesn't look like a login.
   if (approved) {
     await supabase
       .from("app_users")
-      .update({ last_seen: new Date().toISOString() })
+      .update({
+        last_seen: new Date().toISOString(),
+        ...(approved.first_login_at ? {} : { first_login_at: new Date().toISOString() }),
+      })
       .eq("id", approved.id);
   }
 
@@ -97,6 +117,7 @@ export async function POST(req: NextRequest) {
     status: approved ? "approved" : chosen.status,
     authorized: !!approved,
     paid,
+    requirePayment,
     hasLicense: !!chosen.license_key,
   });
 }

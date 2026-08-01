@@ -5,10 +5,11 @@ import { SupabaseClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 type Body = {
-  type?: "distributor" | "app_user" | "admin" | "ea";
+  type?: "distributor" | "app_user" | "admin" | "ea" | "settings";
   id?: string;
   action?: string;
   email?: string;
+  value?: boolean;
 };
 
 /** Add an email to the runtime allowlist and flag any matching distributor. */
@@ -73,6 +74,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     return NextResponse.json({ error: "Unknown admin action" }, { status: 400 });
+  }
+
+  // ── Platform settings (no id — the key is the target) ──
+  if (type === "settings") {
+    if (action !== "setRequirePayment") {
+      return NextResponse.json({ error: "Unknown settings action" }, { status: 400 });
+    }
+    const { error } = await supabase.from("app_settings").upsert({
+      key: "require_payment",
+      value: body.value === true,
+      updated_at: new Date().toISOString(),
+      updated_by: gate.user.email || null,
+    }, { onConflict: "key" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, requirePayment: body.value === true });
   }
 
   if (!type || !id || !action) {
