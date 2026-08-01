@@ -270,23 +270,23 @@ update public.distributors
   where created_at < now() and onboarded = false;
 
 -- ============================================================
--- supabase-free-activation-migration.sql
+-- supabase-instant-activation-migration.sql
 -- ============================================================
--- Free Activation robot switch.
+-- Instant Activation robot switch.
 --
 -- Adds a flag on the eas table so a super admin can designate exactly which
 -- trading bot backs the public /activate flow (the "EA NAPTUNE SCALPER" robot).
 -- App logic keeps at most one bot flagged at a time. Until this migration is
--- run, Free Activation falls back to the FREE_ACTIVATION_MENTOR_ID env var or a
+-- run, Instant Activation falls back to the INSTANT_ACTIVATION_MENTOR_ID env var or a
 -- bot literally named "EA NAPTUNE SCALPER".
 
 alter table public.eas
-  add column if not exists is_free_activation boolean not null default false;
+  add column if not exists is_instant_activation boolean not null default false;
 
 -- Partial index: fast lookup of the single flagged bot.
-create index if not exists eas_is_free_activation_idx
-  on public.eas (is_free_activation)
-  where is_free_activation;
+create index if not exists eas_is_instant_activation_idx
+  on public.eas (is_instant_activation)
+  where is_instant_activation;
 
 -- ============================================================
 -- supabase-analytics-events-migration.sql
@@ -337,11 +337,11 @@ alter table public.mt5_connections enable row level security;
 -- supabase-mt5-connections-app-migration.sql
 -- ============================================================
 -- Add per-app separation to mt5_connections so the Super Admin can tell which
--- app each connected account came from (Free-App, ea-converter, …).
+-- app each connected account came from (EA NAPTUNE, ea-converter, …).
 -- Run this in the Supabase SQL editor. Idempotent.
 
 alter table public.mt5_connections
-  add column if not exists app text not null default 'free-app';
+  add column if not exists app text not null default 'ea-naptune';
 
 -- Each (email, login, server, app) is now a distinct connection row, so the
 -- same MT5 account connected from two different apps shows once per app.

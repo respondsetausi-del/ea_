@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
 import { generateUniqueKey } from "@/lib/license";
-import { resolveFreeActivationEA } from "@/lib/free-activation";
+import { resolveInstantActivationEA } from "@/lib/instant-activation";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -34,7 +34,7 @@ export async function OPTIONS() {
 }
 
 /**
- * POST /api/v1/free-activation
+ * POST /api/v1/instant-activation
  * Body: { email }
  *
  * Public, mentor-less activation for the flagship "EA NAPTUNE SCALPER" bot.
@@ -59,9 +59,9 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Enter a valid email address." }, { status: 400 });
   }
 
-  const ea = await resolveFreeActivationEA(supabase);
-  if (!ea) return corsJson({ error: "Free activation isn't available right now." }, { status: 503 });
-  if (!ea.is_active) return corsJson({ error: "Free activation is temporarily paused." }, { status: 503 });
+  const ea = await resolveInstantActivationEA(supabase);
+  if (!ea) return corsJson({ error: "Instant activation isn't available right now." }, { status: 503 });
+  if (!ea.is_active) return corsJson({ error: "Instant activation is temporarily paused." }, { status: 503 });
 
   const { data: branding } = await supabase
     .from("branding")

@@ -1,5 +1,5 @@
 -- ============================================================
--- Free Robot — one-shot setup / migration (idempotent)
+-- EA NAPTUNE — one-shot setup / migration (idempotent)
 -- Paste the whole file into Supabase → SQL Editor → Run.
 -- Safe to run multiple times.
 -- ============================================================
@@ -44,7 +44,7 @@ begin
     exists (select 1 from public.admin_emails a where lower(a.email) = lower(new.email))
   );
   insert into public.branding (distributor_id, app_name)
-  values (new.id, 'Free Robot');
+  values (new.id, 'EA NAPTUNE');
   return new;
 end;
 $$ language plpgsql security definer;

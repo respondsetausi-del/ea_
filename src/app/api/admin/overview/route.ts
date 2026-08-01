@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
-import { resolveFreeActivationEA, FREE_ACTIVATION_EA_NAME } from "@/lib/free-activation";
+import { resolveInstantActivationEA, INSTANT_ACTIVATION_EA_NAME } from "@/lib/instant-activation";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +103,24 @@ export async function GET(req: NextRequest) {
   }
   const accessVia = (id: string) => accessById.get(id) || "manual";
 
+  // Approval state ships in supabase-user-approval-migration.sql. Query it
+  // separately (and tolerate failure) so the dashboard still renders on a
+  // database where that migration has not been run yet.
+  type ApprovalRow = {
+    id: string;
+    status?: string;
+    paid_at?: string | null;
+    approved_at?: string | null;
+    approved_by?: string | null;
+  };
+  const approvalRes = await supabase
+    .from("app_users")
+    .select("id, status, paid_at, approved_at, approved_by");
+  const approvalById = new Map<string, ApprovalRow>();
+  if (!approvalRes.error && approvalRes.data) {
+    for (const r of approvalRes.data as ApprovalRow[]) approvalById.set(r.id, r);
+  }
+
   const distributorRows = (distributors || []).map(d => ({
     id: d.id,
     email: d.email,
@@ -128,7 +146,18 @@ export async function GET(req: NextRequest) {
     licenseSentAt: u.license_sent_at,
     createdAt: u.created_at,
     accessVia: accessVia(u.id),
+    // Missing status → treat as already-approved, so a pre-migration database
+    // doesn't show every existing client as a pending request.
+    status: approvalById.get(u.id)?.status || "approved",
+    paidAt: approvalById.get(u.id)?.paid_at || null,
+    approvedAt: approvalById.get(u.id)?.approved_at || null,
+    approvedBy: approvalById.get(u.id)?.approved_by || null,
   }));
+
+  // Requests awaiting a decision, newest first — the super admin's inbox.
+  const pendingRequests = appUserRows
+    .filter(u => u.status === "pending")
+    .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
 
   // Live status: an account is "online" only if it's marked connected AND its
   // last heartbeat is fresh (the app pings while its MT5 session is alive), so
@@ -146,7 +175,7 @@ export async function GET(req: NextRequest) {
     email: c.email,
     login: c.login,
     server: c.server,
-    app: c.app || "free-app",
+    app: c.app || "ea-naptune",
     status: c.status || "connected",
     online: isOnline(c),
     connectCount: c.connect_count,
@@ -216,7 +245,7 @@ export async function GET(req: NextRequest) {
     traffic: buildTraffic(events || [], startOfToday, weekAgo, monthAgo),
     payments: {
       paid: usersList.filter(u => accessVia(u.id) === "payment").length,
-      free: usersList.filter(u => accessVia(u.id) !== "payment").length,
+      nonPaying: usersList.filter(u => accessVia(u.id) !== "payment").length,
       paidToday: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= startOfToday).length,
       paidWeek: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= weekAgo).length,
       paidMonth: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= monthAgo).length,
@@ -230,8 +259,10 @@ export async function GET(req: NextRequest) {
     eas: easList.length,
     appUsers: appUserRows.length,
     paidUsers: appUserRows.filter(u => u.accessVia === "payment").length,
-    freeAccessUsers: appUserRows.filter(u => u.accessVia !== "payment").length,
+    nonPayingUsers: appUserRows.filter(u => u.accessVia !== "payment").length,
     licensesIssued: appUserRows.filter(u => u.hasLicense).length,
+    pendingRequests: appUserRows.filter(u => u.status === "pending").length,
+    pendingPaid: appUserRows.filter(u => u.status === "pending" && u.paidAt).length,
     connectedAccounts: mt5Connections.length,
     onlineAccounts: mt5Connections.filter(c => c.online).length,
   };
@@ -260,13 +291,13 @@ export async function GET(req: NextRequest) {
     };
   }).sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || Number(b.registered) - Number(a.registered) || a.email.localeCompare(b.email));
 
-  // ── Free Activation robot: the public mentor-less licensing flow ──
+  // ── Instant Activation robot: the public mentor-less licensing flow ──
   // Read the toggle flags defensively — the column may not exist pre-migration,
   // in which case the switch UI is disabled and name/env resolution still works.
-  const faFlagRes = await supabase.from("eas").select("id, is_free_activation");
+  const faFlagRes = await supabase.from("eas").select("id, is_instant_activation");
   const faSwitchable = !faFlagRes.error;
   const faFlags = new Map<string, boolean>(
-    (faSwitchable && faFlagRes.data ? faFlagRes.data : []).map((r: { id: string; is_free_activation?: boolean }) => [r.id, !!r.is_free_activation]),
+    (faSwitchable && faFlagRes.data ? faFlagRes.data : []).map((r: { id: string; is_instant_activation?: boolean }) => [r.id, !!r.is_instant_activation]),
   );
   const easRows = easList.map(e => ({
     id: e.id,
@@ -274,11 +305,11 @@ export async function GET(req: NextRequest) {
     mentorId: e.mentor_id,
     isActive: e.is_active,
     distributorName: distById.get(e.distributor_id)?.name || "—",
-    isFreeActivation: faFlags.get(e.id) ?? false,
+    isInstantActivation: faFlags.get(e.id) ?? false,
   }));
 
-  const faEA = await resolveFreeActivationEA(supabase);
-  const freeActivation = faEA
+  const faEA = await resolveInstantActivationEA(supabase);
+  const instantActivation = faEA
     ? {
         configured: true,
         switchable: faSwitchable,
@@ -289,9 +320,9 @@ export async function GET(req: NextRequest) {
         distributorName: distById.get(faEA.distributor_id)?.name || "—",
         activations: usersList.filter(u => u.ea_id === faEA.id && u.license_sent_at).length,
       }
-    : { configured: false, switchable: faSwitchable, expectedName: FREE_ACTIVATION_EA_NAME };
+    : { configured: false, switchable: faSwitchable, expectedName: INSTANT_ACTIVATION_EA_NAME };
 
   const mqtt = await fetchMqtt();
 
-  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, admins, eas: easRows, mt5Connections, freeActivation, mqtt });
+  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, admins, eas: easRows, mt5Connections, instantActivation, mqtt });
 }

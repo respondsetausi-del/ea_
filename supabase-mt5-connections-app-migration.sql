@@ -1,9 +1,9 @@
 -- Add per-app separation to mt5_connections so the Super Admin can tell which
--- app each connected account came from (Free-App, ea-converter, …).
+-- app each connected account came from (EA NAPTUNE, ea-converter, …).
 -- Run this in the Supabase SQL editor. Idempotent.
 
 alter table public.mt5_connections
-  add column if not exists app text not null default 'free-app';
+  add column if not exists app text not null default 'ea-naptune';
 
 -- Each (email, login, server, app) is now a distinct connection row, so the
 -- same MT5 account connected from two different apps shows once per app.

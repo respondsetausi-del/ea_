@@ -27,7 +27,7 @@ export default function ActivatePage() {
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/v1/free-activation", {
+      const res = await fetch("/api/v1/instant-activation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: value }),
@@ -80,14 +80,14 @@ export default function ActivatePage() {
             className="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-[2px] mb-3 border"
             style={{ color: ACCENT, background: "rgba(10,132,255,0.1)", borderColor: "rgba(10,132,255,0.25)" }}
           >
-            FREE ACTIVATION
+            INSTANT ACTIVATION
           </div>
           <h1 className="text-[26px] font-black leading-tight mb-2">
             Activate <span style={{ color: ACCENT }}>EA NAPTUNE SCALPER</span>
           </h1>
           <p className="text-[14px] leading-[22px]" style={{ color: MUTED }}>
             No mentor or hoster needed. Enter your email and we&apos;ll send your
-            access key straight to your inbox — free.
+            access key straight to your inbox.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default function ActivatePage() {
               style={{ background: ACCENT, boxShadow: "0 4px 20px rgba(10,132,255,0.35)" }}
             >
               {busy ? <Loader2 size={17} className="animate-spin" /> : <Zap size={17} />}
-              {busy ? "Activating…" : "Get My Free Key"}
+              {busy ? "Activating…" : "Get My Access Key"}
             </button>
 
             <p className="text-[11px] text-center leading-[18px]" style={{ color: MUTED }}>

@@ -14,10 +14,10 @@ const INPUT_BG = "rgba(13,17,23,0.8)";
 const BORDER = "rgba(10,132,255,0.1)";
 
 // Friendly display names for the app that reported a connected account. The raw
-// tag comes from each app's reportMT5Connection() call; "free-app" is the
+// tag comes from each app's reportMT5Connection() call; "ea-naptune" is the
 // EA Access product. Unknown tags fall back to the raw value.
 const APP_LABELS: Record<string, string> = {
-  "free-app": "EA Access (iOS)",
+  "ea-naptune": "EA Access (iOS)",
   "ea-access-android": "EA Access (Android)",
   "ea-converter": "EA Converter (iOS)",
   "ea-converter-android": "EA Converter (Android)",
@@ -37,6 +37,8 @@ type AppUser = {
   id: string; email: string; isActive: boolean; distributorName: string;
   eaName: string; hasLicense: boolean; licenseSentAt: string | null; createdAt: string;
   accessVia: string;
+  status: "pending" | "approved" | "rejected";
+  paidAt: string | null; approvedAt: string | null; approvedBy: string | null;
 };
 type Admin = {
   email: string; registered: boolean; name: string | null;
@@ -54,9 +56,9 @@ type Analytics = {
   bots: { total: number; active: number };
   connections: { total: number; online: number; offline: number; active24h: number; active7d: number; active30d: number };
   traffic: { visitsToday: number; visitsWeek: number; visitsMonth: number; uniqueToday: number; uniqueWeek: number; uniqueMonth: number; returningMonth: number; loginsToday: number; loginsWeek: number; loginsMonth: number };
-  payments: { paid: number; free: number; paidToday: number; paidWeek: number; paidMonth: number };
+  payments: { paid: number; nonPaying: number; paidToday: number; paidWeek: number; paidMonth: number };
 };
-type FreeActivation = {
+type InstantActivation = {
   configured: boolean;
   switchable?: boolean;
   eaId?: string;
@@ -69,22 +71,23 @@ type FreeActivation = {
 };
 type EARow = {
   id: string; name: string; mentorId: string; isActive: boolean;
-  distributorName: string; isFreeActivation: boolean;
+  distributorName: string; isInstantActivation: boolean;
 };
 type Overview = {
   stats: Record<string, number>;
   analytics?: Analytics;
   distributors: Distributor[];
   appUsers: AppUser[];
+  pendingRequests?: AppUser[];
   admins: Admin[];
   eas?: EARow[];
   mt5Connections: ConnectedAccount[];
-  freeActivation?: FreeActivation;
+  instantActivation?: InstantActivation;
   mqtt: any;
 };
 
 const DEMO: Overview = {
-  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, paidUsers: 3, freeAccessUsers: 2, licensesIssued: 3, connectedAccounts: 2, onlineAccounts: 1 },
+  stats: { distributors: 3, verifiedDistributors: 2, suspendedDistributors: 1, eas: 4, appUsers: 5, paidUsers: 3, nonPayingUsers: 2, licensesIssued: 3, connectedAccounts: 2, onlineAccounts: 1 },
   analytics: {
     mentors: { total: 3, active: 2, verified: 2, newToday: 0, newWeek: 1, newMonth: 2 },
     users: { total: 5, active: 4, newToday: 1, newWeek: 2, newMonth: 4, seen24h: 2, seen7d: 3, seen30d: 4 },
@@ -92,7 +95,7 @@ const DEMO: Overview = {
     bots: { total: 4, active: 3 },
     connections: { total: 2, online: 1, offline: 1, active24h: 1, active7d: 2, active30d: 2 },
     traffic: { visitsToday: 42, visitsWeek: 310, visitsMonth: 1180, uniqueToday: 30, uniqueWeek: 190, uniqueMonth: 640, returningMonth: 145, loginsToday: 8, loginsWeek: 44, loginsMonth: 160 },
-    payments: { paid: 3, free: 2, paidToday: 1, paidWeek: 2, paidMonth: 3 },
+    payments: { paid: 3, nonPaying: 2, paidToday: 1, paidWeek: 2, paidMonth: 3 },
   },
   distributors: [
     { id: "d1", email: "respondsetausi@gmail.com", name: "Super Admin", verified: true, onboarded: true, isSuperAdmin: true, isActive: true, createdAt: "2025-01-01T00:00:00Z", eaCount: 2, userCount: 3, licensesSent: 2 },
@@ -100,8 +103,12 @@ const DEMO: Overview = {
     { id: "d3", email: "pending@example.com", name: "New Distributor", verified: false, onboarded: false, isSuperAdmin: false, isActive: false, createdAt: "2025-05-01T00:00:00Z", eaCount: 1, userCount: 0, licensesSent: 0 },
   ],
   appUsers: [
-    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z", accessVia: "payment" },
-    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z", accessVia: "manual" },
+    { id: "u1", email: "trader1@example.com", isActive: true, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: true, licenseSentAt: "2025-04-02T00:00:00Z", createdAt: "2025-03-01T00:00:00Z", accessVia: "payment", status: "approved", paidAt: "2025-03-01T00:00:00Z", approvedAt: "2025-03-02T00:00:00Z", approvedBy: "respondsetausi@gmail.com" },
+    { id: "u2", email: "trader2@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2025-03-10T00:00:00Z", accessVia: "manual", status: "approved", paidAt: null, approvedAt: "2025-03-11T00:00:00Z", approvedBy: "respondsetausi@gmail.com" },
+  ],
+  pendingRequests: [
+    { id: "p1", email: "newclient@example.com", isActive: false, distributorName: "Bellion FX", eaName: "Gold Scalper", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-29T00:00:00Z", accessVia: "payment", status: "pending", paidAt: "2026-07-29T10:00:00Z", approvedAt: null, approvedBy: null },
+    { id: "p2", email: "waiting@example.com", isActive: false, distributorName: "Super Admin", eaName: "EA NAPTUNE SCALPER", hasLicense: false, licenseSentAt: null, createdAt: "2026-07-28T00:00:00Z", accessVia: "manual", status: "pending", paidAt: null, approvedAt: null, approvedBy: null },
   ],
   admins: [
     { email: "respondsetausi@gmail.com", registered: true, name: "Super Admin", distributorId: "d1", isActive: true, locked: true, isOwner: true },
@@ -109,15 +116,15 @@ const DEMO: Overview = {
     { email: "newadmin@example.com", registered: false, name: null, distributorId: null, isActive: null, locked: false, isOwner: false },
   ],
   mt5Connections: [
-    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "free-app", status: "connected", online: true, lastHeartbeatAt: "2026-06-20T00:00:00Z", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
+    { email: "trader1@example.com", login: "4078302", server: "RazorMarkets-Live", app: "ea-naptune", status: "connected", online: true, lastHeartbeatAt: "2026-06-20T00:00:00Z", connectCount: 3, firstConnectedAt: "2026-06-01T00:00:00Z", lastConnectedAt: "2026-06-20T00:00:00Z" },
     { email: "trader2@example.com", login: "5091188", server: "RazorMarkets-Live", app: "ea-converter", status: "disconnected", online: false, lastHeartbeatAt: "2026-06-18T00:00:00Z", connectCount: 1, firstConnectedAt: "2026-06-18T00:00:00Z", lastConnectedAt: "2026-06-18T00:00:00Z" },
   ],
   eas: [
-    { id: "demo-1", name: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", isActive: true, distributorName: "Super Admin", isFreeActivation: true },
-    { id: "demo-2", name: "Gold Scalper Pro", mentorId: "EA-GX4R-8KNP", isActive: true, distributorName: "Bellion FX", isFreeActivation: false },
-    { id: "demo-3", name: "Forex Hunter", mentorId: "EA-LM7W-Q2FT", isActive: false, distributorName: "Bellion FX", isFreeActivation: false },
+    { id: "demo-1", name: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", isActive: true, distributorName: "Super Admin", isInstantActivation: true },
+    { id: "demo-2", name: "Gold Scalper Pro", mentorId: "EA-GX4R-8KNP", isActive: true, distributorName: "Bellion FX", isInstantActivation: false },
+    { id: "demo-3", name: "Forex Hunter", mentorId: "EA-LM7W-Q2FT", isActive: false, distributorName: "Bellion FX", isInstantActivation: false },
   ],
-  freeActivation: { configured: true, switchable: true, eaId: "demo-1", eaName: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", active: true, distributorName: "Super Admin", activations: 12 },
+  instantActivation: { configured: true, switchable: true, eaId: "demo-1", eaName: "EA NAPTUNE SCALPER", mentorId: "EA-SCLP-2K9X", active: true, distributorName: "Super Admin", activations: 12 },
   mqtt: { configured: true, mqtt: { healthy: true, live: true, brokerConnectionsOpen: 2, connectedAccounts: 2, totalSignals: 128, lastSignalAt: "2026-06-01T20:56:03Z", secondsSinceLastSignal: 14 },
     accounts: { count: 2, symbols: ["EURUSD", "XAUUSD"], list: [
       { id: "acct-abc", ip: "102.89.x.x", symbols: ["EURUSD", "XAUUSD"], signalsReceived: 64, connectedForSeconds: 3600 },
@@ -215,17 +222,17 @@ export default function AdminPage() {
     setAddingAdmin(false); setBusy(null);
   };
 
-  const eaAct = async (id: string, action: "setFreeActivation" | "clearFreeActivation") => {
+  const eaAct = async (id: string, action: "setInstantActivation" | "clearInstantActivation") => {
     setBusy(`ea:${id}:${action}`);
     if (DEV_MODE) {
       await new Promise(r => setTimeout(r, 400));
       setData(prev => prev ? {
         ...prev,
-        eas: (prev.eas || []).map(e => ({ ...e, isFreeActivation: action === "setFreeActivation" && e.id === id })),
-        freeActivation: (() => {
+        eas: (prev.eas || []).map(e => ({ ...e, isInstantActivation: action === "setInstantActivation" && e.id === id })),
+        instantActivation: (() => {
           const target = (prev.eas || []).find(e => e.id === id);
-          if (action === "clearFreeActivation" || !target) return { configured: false, switchable: true, expectedName: "EA NAPTUNE SCALPER" };
-          return { configured: true, switchable: true, eaId: target.id, eaName: target.name, mentorId: target.mentorId, active: target.isActive, distributorName: target.distributorName, activations: prev.freeActivation?.activations ?? 0 };
+          if (action === "clearInstantActivation" || !target) return { configured: false, switchable: true, expectedName: "EA NAPTUNE SCALPER" };
+          return { configured: true, switchable: true, eaId: target.id, eaName: target.name, mentorId: target.mentorId, active: target.isActive, distributorName: target.distributorName, activations: prev.instantActivation?.activations ?? 0 };
         })(),
       } : prev);
       setBusy(null);
@@ -290,20 +297,20 @@ export default function AdminPage() {
         <Stat icon={Radio} label="Online now" value={data.stats.onlineAccounts ?? 0} />
       </div>
 
-      {data.freeActivation && (
-        <Section title="Free Activation Robot" icon={Bot}>
-          {data.freeActivation.configured ? (
+      {data.instantActivation && (
+        <Section title="Instant Activation Robot" icon={Bot}>
+          {data.instantActivation.configured ? (
             <div className="rounded-xl p-3 mb-4" style={{ background: "rgba(10,132,255,0.06)", border: `1px solid ${BORDER}` }}>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-bold text-white truncate">{data.freeActivation.eaName}</p>
-                {data.freeActivation.active
+                <p className="text-sm font-bold text-white truncate">{data.instantActivation.eaName}</p>
+                {data.instantActivation.active
                   ? <Tag color="green">LIVE</Tag>
                   : <Tag color="red">INACTIVE — bot is turned off</Tag>}
               </div>
               <p className="text-[11px] mt-1" style={{ color: MUTED }}>
-                EA ID <span className="font-mono">{data.freeActivation.mentorId}</span>
-                {" · "}owned by {data.freeActivation.distributorName}
-                {" · "}{data.freeActivation.activations ?? 0} activations sent
+                EA ID <span className="font-mono">{data.instantActivation.mentorId}</span>
+                {" · "}owned by {data.instantActivation.distributorName}
+                {" · "}{data.instantActivation.activations ?? 0} activations sent
                 {" · "}powers <a href="/activate" target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: ACCENT }}>/activate</a>
               </p>
             </div>
@@ -311,19 +318,19 @@ export default function AdminPage() {
             <div className="flex items-start gap-2 mb-4">
               <AlertTriangle size={16} style={{ color: "#F59E0B" }} className="mt-0.5 shrink-0" />
               <p className="text-xs" style={{ color: MUTED }}>
-                No Free Activation robot selected yet. Flip the switch on a bot below to power the{" "}
+                No Instant Activation robot selected yet. Flip the switch on a bot below to power the{" "}
                 <a href="/activate" className="font-semibold" style={{ color: ACCENT }}>/activate</a> page.
               </p>
             </div>
           )}
 
-          {data.freeActivation.switchable === false && (
+          {data.instantActivation.switchable === false && (
             <div className="flex items-start gap-2 mb-4 rounded-xl p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
               <AlertTriangle size={15} style={{ color: "#F59E0B" }} className="mt-0.5 shrink-0" />
               <p className="text-[11px]" style={{ color: "#F59E0B" }}>
                 The switch needs a one-time DB migration. Run{" "}
-                <span className="font-mono">supabase-free-activation-migration.sql</span> in your Supabase SQL editor to enable per-bot selection. Until then it falls back to a bot named{" "}
-                <span className="font-bold">&ldquo;EA NAPTUNE SCALPER&rdquo;</span> or the <span className="font-mono">FREE_ACTIVATION_MENTOR_ID</span> env var.
+                <span className="font-mono">supabase-instant-activation-migration.sql</span> in your Supabase SQL editor to enable per-bot selection. Until then it falls back to a bot named{" "}
+                <span className="font-bold">&ldquo;EA NAPTUNE SCALPER&rdquo;</span> or the <span className="font-mono">INSTANT_ACTIVATION_MENTOR_ID</span> env var.
               </p>
             </div>
           )}
@@ -332,37 +339,37 @@ export default function AdminPage() {
           <div className="space-y-2">
             {(data.eas || []).length === 0 && <p className="text-xs" style={{ color: MUTED }}>No trading bots exist yet. Create one in Trading Bots.</p>}
             {(data.eas || []).map(ea => (
-              <div key={ea.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ea.isFreeActivation ? "rgba(10,132,255,0.4)" : BORDER}` }}>
+              <div key={ea.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${ea.isInstantActivation ? "rgba(10,132,255,0.4)" : BORDER}` }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-white truncate">{ea.name}</p>
-                    {ea.isFreeActivation && <Tag color="green">FREE ACTIVATION</Tag>}
+                    {ea.isInstantActivation && <Tag color="green">INSTANT ACTIVATION</Tag>}
                     {!ea.isActive && <Tag color="gray">OFF</Tag>}
                   </div>
                   <p className="text-[11px] truncate" style={{ color: MUTED }}>
                     <span className="font-mono">{ea.mentorId}</span> · {ea.distributorName}
                   </p>
                 </div>
-                {ea.isFreeActivation ? (
+                {ea.isInstantActivation ? (
                   <button
-                    onClick={() => eaAct(ea.id, "clearFreeActivation")}
-                    disabled={busy === `ea:${ea.id}:clearFreeActivation` || data.freeActivation?.switchable === false}
+                    onClick={() => eaAct(ea.id, "clearInstantActivation")}
+                    disabled={busy === `ea:${ea.id}:clearInstantActivation` || data.instantActivation?.switchable === false}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40"
                     style={{ border: `1px solid ${BORDER}`, color: MUTED }}
-                    title="Turn off Free Activation for this bot"
+                    title="Turn off Instant Activation for this bot"
                   >
-                    {busy === `ea:${ea.id}:clearFreeActivation` ? <RefreshCw size={13} className="animate-spin" /> : <PowerOff size={13} />}
+                    {busy === `ea:${ea.id}:clearInstantActivation` ? <RefreshCw size={13} className="animate-spin" /> : <PowerOff size={13} />}
                     Turn off
                   </button>
                 ) : (
                   <button
-                    onClick={() => eaAct(ea.id, "setFreeActivation")}
-                    disabled={busy === `ea:${ea.id}:setFreeActivation` || data.freeActivation?.switchable === false}
+                    onClick={() => eaAct(ea.id, "setInstantActivation")}
+                    disabled={busy === `ea:${ea.id}:setInstantActivation` || data.instantActivation?.switchable === false}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40 text-black"
                     style={{ background: ACCENT }}
-                    title="Make this the Free Activation robot"
+                    title="Make this the Instant Activation robot"
                   >
-                    {busy === `ea:${ea.id}:setFreeActivation` ? <RefreshCw size={13} className="animate-spin" /> : <Power size={13} />}
+                    {busy === `ea:${ea.id}:setInstantActivation` ? <RefreshCw size={13} className="animate-spin" /> : <Power size={13} />}
                     Set as robot
                   </button>
                 )}
@@ -400,7 +407,7 @@ export default function AdminPage() {
           ]} />
           <AnalyticsGroup title="Payments" items={[
             ["Paid users", data.analytics.payments.paid],
-            ["Free access", data.analytics.payments.free],
+            ["Non-paying", data.analytics.payments.nonPaying],
             ["Paid today", data.analytics.payments.paidToday],
             ["Paid this week", data.analytics.payments.paidWeek],
             ["Paid this month", data.analytics.payments.paidMonth],
@@ -559,6 +566,47 @@ export default function AdminPage() {
         </div>
       </Section>
 
+      {/* Client requests: mentors add clients as pending; payment status shows
+          here so the decision to approve can be made in one place. */}
+      <Section title={`Client Requests${(data.pendingRequests?.length ?? 0) > 0 ? ` (${data.pendingRequests!.length})` : ""}`} icon={UserPlus}>
+        <div className="space-y-2">
+          {(data.pendingRequests?.length ?? 0) === 0 && (
+            <p className="text-xs" style={{ color: MUTED }}>No requests waiting. New clients added by a mentor appear here.</p>
+          )}
+          {(data.pendingRequests ?? []).map(u => (
+            <div key={u.id} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-white truncate">{u.email}</p>
+                  {u.paidAt
+                    ? <Tag color="green">PAID</Tag>
+                    : <Tag color="amber">AWAITING PAYMENT</Tag>}
+                </div>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>
+                  {u.distributorName} · {u.eaName} · requested {new Date(u.createdAt).toLocaleDateString()}
+                  {u.paidAt ? ` · paid ${new Date(u.paidAt).toLocaleDateString()}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <ActionBtn
+                  busy={isBusy(u.id, "approve")}
+                  onClick={() => act("app_user", u.id, "approve", u.paidAt ? undefined : `${u.email} has no recorded payment. Approve anyway?`)}
+                  icon={BadgeCheck}
+                  title="Approve — client can log in"
+                />
+                <ActionBtn
+                  busy={isBusy(u.id, "reject")}
+                  onClick={() => act("app_user", u.id, "reject", `Reject ${u.email}'s request?`)}
+                  icon={Ban}
+                  title="Reject"
+                  danger
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       <Section title="App Users" icon={Activity}>
         <div className="space-y-2">
           {data.appUsers.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No app users yet.</p>}
@@ -567,9 +615,11 @@ export default function AdminPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-white truncate">{u.email}</p>
-                  {u.accessVia === "payment" ? <Tag color="green">PAID</Tag> : <Tag color="amber">FREE ACCESS</Tag>}
+                  {u.paidAt || u.accessVia === "payment" ? <Tag color="green">PAID</Tag> : <Tag color="amber">NO PAYMENT</Tag>}
+                  {u.status === "pending" && <Tag color="amber">PENDING</Tag>}
+                  {u.status === "rejected" && <Tag color="red">REJECTED</Tag>}
                   {u.hasLicense ? <Tag color="green">LICENSED</Tag> : <Tag color="gray">NO KEY</Tag>}
-                  {!u.isActive && <Tag color="red">DISABLED</Tag>}
+                  {!u.isActive && u.status !== "pending" && <Tag color="red">DISABLED</Tag>}
                 </div>
                 <p className="text-[11px] truncate" style={{ color: MUTED }}>{u.distributorName} · {u.eaName}</p>
               </div>
@@ -588,7 +638,7 @@ export default function AdminPage() {
       <Section title="Connected Accounts" icon={Link2}>
         {data.mt5Connections.length === 0 && <p className="text-xs" style={{ color: MUTED }}>No connected accounts yet.</p>}
         {Object.entries(
-          data.mt5Connections.reduce((acc, c) => { (acc[c.app || "free-app"] ||= []).push(c); return acc; }, {} as Record<string, ConnectedAccount[]>)
+          data.mt5Connections.reduce((acc, c) => { (acc[c.app || "ea-naptune"] ||= []).push(c); return acc; }, {} as Record<string, ConnectedAccount[]>)
         ).sort((a, b) => a[0].localeCompare(b[0])).map(([app, list]) => (
           <div key={app} className="mb-4 last:mb-0">
             <div className="flex items-center gap-2 mb-2">

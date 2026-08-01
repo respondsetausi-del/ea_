@@ -64,10 +64,17 @@ export default function UsersPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Explicitly pending: a new client is a request for the super admin to
+    // approve (after confirming payment), not immediate access.
+    // is_active is forced false as well — it defaults to true, and any consumer
+    // that only checks is_active (e.g. /api/v1/config) would otherwise let an
+    // unapproved client straight in.
     const { data: newUser, error } = await supabase.from("app_users").insert({
       distributor_id: user.id,
       ea_id: form.ea_id,
       email: form.email,
+      status: "pending",
+      is_active: false,
     }).select("id").single();
 
     if (error) {

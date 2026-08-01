@@ -32,7 +32,7 @@ begin
   );
 
   insert into public.branding (distributor_id, app_name)
-  values (new.id, 'Free Robot');
+  values (new.id, 'EA NAPTUNE');
 
   return new;
 end;

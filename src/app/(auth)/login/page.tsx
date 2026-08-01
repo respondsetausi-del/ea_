@@ -25,14 +25,14 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    if (DEV_MODE && email === "test@freerobot.app" && password === "king") {
+    if (DEV_MODE && email === "test@eanaptune.app" && password === "king") {
       router.push("/dashboard");
       return;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(DEV_MODE ? "Use test@freerobot.app / king" : error.message);
+      setError(DEV_MODE ? "Use test@eanaptune.app / king" : error.message);
       setLoading(false);
       return;
     }

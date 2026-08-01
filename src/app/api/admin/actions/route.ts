@@ -27,7 +27,7 @@ async function revokeAdminByEmail(supabase: SupabaseClient, email: string) {
  * God-mode mutations over any distributor or app user.
  *
  * distributor: verify | suspend | activate | delete | grantAdmin | revokeAdmin
- * app_user:    activate | deactivate | delete | resendLicense
+ * app_user:    approve | reject | activate | deactivate | delete | resendLicense
  */
 export async function POST(req: NextRequest) {
   const gate = await requireSuperAdmin(req);
@@ -158,6 +158,21 @@ export async function POST(req: NextRequest) {
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         return NextResponse.json({ ok: true });
       }
+      // ── Approval queue ──
+      // Distinct from activate/deactivate: status tracks whether the client was
+      // ever let in, is_active whether an approved client is currently allowed.
+      case "approve":
+      case "reject": {
+        const approving = action === "approve";
+        const { error } = await supabase.from("app_users").update({
+          status: approving ? "approved" : "rejected",
+          is_active: approving,
+          approved_at: approving ? new Date().toISOString() : null,
+          approved_by: approving ? (gate.user.email || null) : null,
+        }).eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
       case "delete": {
         const { error } = await supabase.from("app_users").delete().eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -179,24 +194,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── EA / Free Activation robot switch ──
+  // ── EA / Instant Activation robot switch ──
   if (type === "ea") {
     switch (action) {
-      case "setFreeActivation": {
+      case "setInstantActivation": {
         // Single-select: clear every other bot, then flag this one.
-        const clear = await supabase.from("eas").update({ is_free_activation: false }).neq("id", id);
+        const clear = await supabase.from("eas").update({ is_instant_activation: false }).neq("id", id);
         if (clear.error) {
           return NextResponse.json(
-            { error: "Run the Free Activation migration first (adds is_free_activation to eas)." },
+            { error: "Run the Instant Activation migration first (adds is_instant_activation to eas)." },
             { status: 400 },
           );
         }
-        const { error } = await supabase.from("eas").update({ is_free_activation: true }).eq("id", id);
+        const { error } = await supabase.from("eas").update({ is_instant_activation: true }).eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         return NextResponse.json({ ok: true });
       }
-      case "clearFreeActivation": {
-        const { error } = await supabase.from("eas").update({ is_free_activation: false }).eq("id", id);
+      case "clearInstantActivation": {
+        const { error } = await supabase.from("eas").update({ is_instant_activation: false }).eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         return NextResponse.json({ ok: true });
       }

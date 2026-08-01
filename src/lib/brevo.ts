@@ -46,7 +46,7 @@ export async function sendEmail({ to, toName, subject, htmlContent }: SendEmailA
       body: JSON.stringify({
         sender: {
           email: process.env.BREVO_SENDER_EMAIL,
-          name: process.env.BREVO_SENDER_NAME || "Free Robot",
+          name: process.env.BREVO_SENDER_NAME || "EA NAPTUNE",
         },
         to: [{ email: to, name: toName || to }],
         subject,
@@ -75,7 +75,7 @@ function emailShell(title: string, bodyHtml: string): string {
   <div style="margin:0;padding:0;background:#0b0f0c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:480px;margin:0 auto;padding:40px 24px;">
       <div style="text-align:center;margin-bottom:28px;">
-        <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">FREE ROBOT</span>
+        <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">EA NAPTUNE</span>
       </div>
       <div style="background:#11161300;background-color:#121814;border:1px solid rgba(10,132,255,0.25);border-radius:18px;padding:32px 28px;">
         <h1 style="margin:0 0 14px;font-size:20px;color:#ffffff;font-weight:800;">${title}</h1>
@@ -103,7 +103,7 @@ function ctaButton(href: string, label: string): string {
  * QUICK_SERVER_URL env var so the link can change without a code edit.
  */
 export function quickServerBanner(): string {
-  const url = process.env.QUICK_SERVER_URL || "https://free-app-site.vercel.app";
+  const url = process.env.QUICK_SERVER_URL || "https://eanaptune.vercel.app";
   return `
     <div style="margin:24px 0 4px;background:linear-gradient(135deg,#1c2416,#121814);border:1px solid rgba(10,132,255,0.3);border-radius:16px;padding:22px 20px;text-align:center;">
       <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:${ACCENT};text-transform:uppercase;margin-bottom:8px;">Quick Server</div>
@@ -144,7 +144,7 @@ export function welcomeEmail(appName: string, loginUrl?: string): { subject: str
 }
 
 export function verificationEmail(name: string, verifyUrl: string): { subject: string; htmlContent: string } {
-  const subject = "Verify your Free Robot distributor account";
+  const subject = "Verify your EA NAPTUNE distributor account";
   const htmlContent = emailShell(
     "Confirm your email",
     `
@@ -152,7 +152,7 @@ export function verificationEmail(name: string, verifyUrl: string): { subject: s
       Hi ${name || "there"},
     </p>
     <p style="color:#c7cdd0;font-size:14px;line-height:22px;margin:0;">
-      Thanks for signing up as a Free Robot distributor. Confirm your email to activate your account and unlock dashboard access.
+      Thanks for signing up as a EA NAPTUNE distributor. Confirm your email to activate your account and unlock dashboard access.
     </p>
     ${ctaButton(verifyUrl, "Verify & Activate")}
     <p style="color:#8a8f92;font-size:12px;line-height:18px;margin:18px 0 0;">
@@ -164,7 +164,7 @@ export function verificationEmail(name: string, verifyUrl: string): { subject: s
 }
 
 export function licenseEmail(appName: string, licenseKey: string): { subject: string; htmlContent: string } {
-  const app = appName || "Free Robot";
+  const app = appName || "EA NAPTUNE";
   const subject = `Your ${app} access key`;
   const htmlContent = emailShell(
     "Your access key is ready",
@@ -186,7 +186,7 @@ export function licenseEmail(appName: string, licenseKey: string): { subject: st
 }
 
 export function passwordResetEmail(name: string, resetUrl: string): { subject: string; htmlContent: string } {
-  const subject = "Reset your Free Robot password";
+  const subject = "Reset your EA NAPTUNE password";
   const htmlContent = emailShell(
     "Reset your password",
     `
@@ -210,7 +210,7 @@ export function passwordResetEmail(name: string, resetUrl: string): { subject: s
 }
 
 export function accessGrantedEmail(name: string, loginUrl: string): { subject: string; htmlContent: string } {
-  const subject = "Your Free Robot account is approved 🎉";
+  const subject = "Your EA NAPTUNE account is approved 🎉";
   const htmlContent = emailShell(
     "You're approved!",
     `

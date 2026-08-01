@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not save license" }, { status: 500 });
   }
 
-  const { subject, htmlContent } = licenseEmail(branding?.app_name || "Free Robot", licenseKey);
+  const { subject, htmlContent } = licenseEmail(branding?.app_name || "EA NAPTUNE", licenseKey);
   const result = await sendEmail({ to: appUser.email, subject, htmlContent });
 
   // Check if the caller is a super admin — reveal the key to them only.

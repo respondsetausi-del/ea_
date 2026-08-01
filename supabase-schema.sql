@@ -32,7 +32,7 @@ create policy "Distributors can update own row"
 create table public.branding (
   id uuid primary key default gen_random_uuid(),
   distributor_id uuid not null references public.distributors(id) on delete cascade,
-  app_name text not null default 'Free Robot',
+  app_name text not null default 'EA NAPTUNE',
   glow_color text not null default '#FFFFFF',
   logo_url text,
   robot_image_url text,
@@ -124,7 +124,7 @@ begin
   );
 
   insert into public.branding (distributor_id, app_name)
-  values (new.id, 'Free Robot');
+  values (new.id, 'EA NAPTUNE');
 
   return new;
 end;

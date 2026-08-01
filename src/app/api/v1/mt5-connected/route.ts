@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
   const login = body.login?.toString().trim();
   const server = body.server?.trim();
   // Which app the connection came from (clean per-app separation). Defaults to
-  // "free-app" for back-compat with older clients that don't send it.
-  const app = (body.app?.toString().trim() || "free-app").toLowerCase();
+  // "ea-naptune" for back-compat with older clients that don't send it.
+  const app = (body.app?.toString().trim() || "ea-naptune").toLowerCase();
   // Connection lifecycle event. "connect" (default) records/refreshes the link;
   // "heartbeat" keeps it live; "disconnect" marks it offline immediately.
   const rawEvent = (body.event?.toString().trim() || "connect").toLowerCase();

@@ -10,7 +10,7 @@ export const DEV_MODE = !isSupabaseConfigured();
 
 export const DEV_USER = {
   id: 'dev-distributor-001',
-  email: 'demo@freerobot.app',
+  email: 'demo@eanaptune.app',
   user_metadata: { name: 'Demo Distributor' },
 };
 
