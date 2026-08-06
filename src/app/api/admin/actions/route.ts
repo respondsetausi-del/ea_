@@ -10,7 +10,18 @@ type Body = {
   action?: string;
   email?: string;
   value?: boolean;
+  /** extendAccess: length of the new window; defaults to app_settings.access_days. */
+  days?: number;
 };
+
+/** How many days an approval grants. Configurable without a deploy. */
+const DEFAULT_ACCESS_DAYS = 30;
+async function accessDays(supabase: SupabaseClient): Promise<number> {
+  const { data } = await supabase
+    .from("app_settings").select("value").eq("key", "access_days").maybeSingle();
+  const n = Number(data?.value);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_ACCESS_DAYS;
+}
 
 /** Add an email to the runtime allowlist and flag any matching distributor. */
 async function grantAdminByEmail(supabase: SupabaseClient, email: string) {
@@ -180,14 +191,57 @@ export async function POST(req: NextRequest) {
       case "approve":
       case "reject": {
         const approving = action === "approve";
+
+        // The clock starts at PAYMENT. If the Stripe webhook already opened a
+        // window, approving must not touch it — otherwise an admin approving a
+        // day later would silently restart the 30 days, and approving near the
+        // end would hand out a free extension.
+        //
+        // Approval only starts the clock for users who never paid: comped
+        // clients, offline payments, promos.
+        const { data: current } = await supabase
+          .from("app_users").select("access_expires_at").eq("id", id).maybeSingle();
+
+        let expiresAt: string | null | undefined;
+        if (!approving) {
+          expiresAt = null; // rejecting clears any window
+        } else if (current?.access_expires_at) {
+          expiresAt = undefined; // paid already — leave the existing deadline alone
+        } else {
+          expiresAt = new Date(Date.now() + (await accessDays(supabase)) * 86_400_000).toISOString();
+        }
+
         const { error } = await supabase.from("app_users").update({
           status: approving ? "approved" : "rejected",
           is_active: approving,
           approved_at: approving ? new Date().toISOString() : null,
           approved_by: approving ? (gate.user.email || null) : null,
+          // Omitted entirely when undefined, so the stored value survives.
+          ...(expiresAt === undefined ? {} : { access_expires_at: expiresAt }),
         }).eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({
+          ok: true,
+          accessExpiresAt: expiresAt === undefined ? current?.access_expires_at ?? null : expiresAt,
+        });
+      }
+      // Push an existing user's deadline out by another window — a renewal
+      // without having to re-approve them.
+      case "extendAccess": {
+        const days = Number(body?.days) > 0 ? Number(body.days) : await accessDays(supabase);
+        const { data: row } = await supabase
+          .from("app_users").select("access_expires_at").eq("id", id).maybeSingle();
+        // Extend from whichever is later: now, or the current deadline. Renewing
+        // early therefore adds time rather than throwing the remainder away.
+        const base = row?.access_expires_at
+          ? Math.max(Date.now(), new Date(row.access_expires_at).getTime())
+          : Date.now();
+        const expiresAt = new Date(base + days * 86_400_000).toISOString();
+        const { error } = await supabase.from("app_users")
+          .update({ access_expires_at: expiresAt, is_active: true, status: "approved" })
+          .eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true, accessExpiresAt: expiresAt });
       }
       case "delete": {
         const { error } = await supabase.from("app_users").delete().eq("id", id);

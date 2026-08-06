@@ -32,7 +32,16 @@ type AppUserRow = {
   paid_at: string | null;
   license_key: string | null;
   first_login_at: string | null;
+  /** NULL = never expires (users who predate the 30-day window). */
+  access_expires_at: string | null;
 };
+
+/** A row is only usable if it's approved, active, and still inside its window. */
+function isLive(r: AppUserRow): boolean {
+  if (r.status !== "approved" || !r.is_active) return false;
+  if (!r.access_expires_at) return true;
+  return Date.now() < new Date(r.access_expires_at).getTime();
+}
 
 /**
  * POST /api/v1/authorize
@@ -68,7 +77,7 @@ export async function POST(req: NextRequest) {
   // approved row so a second mentor's pending entry can't lock them out.
   const { data, error } = await supabase
     .from("app_users")
-    .select("id, email, status, is_active, paid_at, license_key, first_login_at")
+    .select("id, email, status, is_active, paid_at, license_key, first_login_at, access_expires_at")
     .ilike("email", email);
 
   if (error) {
@@ -95,9 +104,21 @@ export async function POST(req: NextRequest) {
     return corsJson({ found: false, status: "unknown", authorized: false, paid: false, requirePayment });
   }
 
-  const approved = rows.find(r => r.status === "approved" && r.is_active);
-  const chosen = approved || rows.find(r => r.status === "pending") || rows[0];
+  // Live rows first. An approved-but-expired row must not satisfy the gate,
+  // but it's still the row we describe back to the app so it can say
+  // "your access ended on X" instead of the useless "no access yet".
+  const approved = rows.find(isLive);
+  const expiredRow = !approved
+    ? rows.find(r => r.status === "approved" && r.is_active && !!r.access_expires_at)
+    : undefined;
+  const chosen = approved || expiredRow || rows.find(r => r.status === "pending") || rows[0];
   const paid = rows.some(r => !!r.paid_at);
+
+  const expiresAt = (approved || expiredRow)?.access_expires_at ?? null;
+  const expired = !approved && !!expiredRow;
+  const daysRemaining = approved && expiresAt
+    ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000))
+    : null;
 
   // last_seen doubles as "has this client ever actually logged in?" — the
   // dashboard shows "Never logged in" while it is null. Only stamped for an
@@ -114,8 +135,13 @@ export async function POST(req: NextRequest) {
 
   return corsJson({
     found: true,
-    status: approved ? "approved" : chosen.status,
+    // "expired" is reported as its own status so the app can tell an ended
+    // subscription apart from an account that was never approved.
+    status: approved ? "approved" : expired ? "expired" : chosen.status,
     authorized: !!approved,
+    expired,
+    expiresAt,
+    daysRemaining,
     paid,
     requirePayment,
     hasLicense: !!chosen.license_key,
