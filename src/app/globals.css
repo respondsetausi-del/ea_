@@ -4,3 +4,42 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Mobile fit ──────────────────────────────────────────────
+   The dashboard is laid out for a desktop table and was being read on a
+   phone, where two things made it unusable: iOS zoomed in on any focused
+   field under 16px and never zoomed back, and wide rows let the whole page
+   scroll sideways. The viewport export in layout.tsx handles the pinch; this
+   handles the cause and the overflow. */
+
+html,
+body {
+  max-width: 100%;
+  /* Nothing may widen the document itself. Wide content has to scroll inside
+     its own container (below) rather than dragging the page with it. */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+/* iOS zooms when a focused field's text is below 16px. Fixing the size fixes
+   the cause — `user-scalable=no` alone is ignored on recent iOS. max() leaves
+   any deliberately larger size alone and only raises the small ones. */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
+
+/* Tables are the one thing here that genuinely can't fit a phone. Let them
+   scroll within their own box, with momentum, instead of stretching the page. */
+.overflow-x-auto,
+table {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* A long licence key or email in a table cell would otherwise force the row
+   wider than the screen. */
+td,
+th {
+  overflow-wrap: anywhere;
+}
