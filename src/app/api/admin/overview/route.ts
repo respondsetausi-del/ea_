@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
 import { resolveInstantActivationEA, INSTANT_ACTIVATION_EA_NAME } from "@/lib/instant-activation";
+import { isBrevoConfigured } from "@/lib/brevo";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +165,14 @@ export async function GET(req: NextRequest) {
     .filter(u => u.status === "pending")
     .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
 
+  // Mentors awaiting approval. `verified` is the gate the login and dashboard
+  // both read, so an unverified distributor is one who has signed up and
+  // cannot get in yet. Previously nothing surfaced these as a queue — they
+  // were only visible by scanning the full distributor list for a flag.
+  const pendingDistributors = distributorRows
+    .filter(d => !d.verified && d.isActive)
+    .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
+
   // Live status: an account is "online" only if it's marked connected AND its
   // last heartbeat is fresh (the app pings while its MT5 session is alive), so
   // a force-killed app naturally drops offline once its heartbeats lapse.
@@ -268,6 +277,7 @@ export async function GET(req: NextRequest) {
     licensesIssued: appUserRows.filter(u => u.hasLicense).length,
     pendingRequests: appUserRows.filter(u => u.status === "pending").length,
     pendingPaid: appUserRows.filter(u => u.status === "pending" && u.paidAt).length,
+    pendingDistributors: pendingDistributors.length,
     connectedAccounts: mt5Connections.length,
     onlineAccounts: mt5Connections.filter(c => c.online).length,
   };
@@ -336,5 +346,15 @@ export async function GET(req: NextRequest) {
     .from("app_settings").select("value").eq("key", "require_payment").maybeSingle();
   if (!settingRes.error && settingRes.data) requirePayment = settingRes.data.value !== false;
 
-  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, admins, eas: easRows, mt5Connections, instantActivation, mqtt, settings: { requirePayment } });
+  // Whether outbound email will actually send. Approval notifications fail
+  // silently by design (a mail outage must not block an approval), so without
+  // this the panel would look identical whether Brevo is wired up or not.
+  const email = {
+    configured: isBrevoConfigured(),
+    sender: process.env.BREVO_SENDER_EMAIL || null,
+    senderName: process.env.BREVO_SENDER_NAME || "EA NAPTUNE",
+    signupMode: (process.env.NEXT_PUBLIC_SIGNUP_MODE || "open").toLowerCase(),
+  };
+
+  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, pendingDistributors, admins, eas: easRows, mt5Connections, instantActivation, mqtt, email, settings: { requirePayment } });
 }

@@ -80,6 +80,9 @@ type Overview = {
   distributors: Distributor[];
   appUsers: AppUser[];
   pendingRequests?: AppUser[];
+  /** Mentors who have signed up but aren't approved yet. */
+  pendingDistributors?: Distributor[];
+  email?: { configured: boolean; sender: string | null; senderName: string; signupMode: string };
   settings?: { requirePayment: boolean };
   admins: Admin[];
   eas?: EARow[];
@@ -613,6 +616,68 @@ export default function AdminPage() {
               ? "Saving…"
               : data.settings?.requirePayment === false ? "Turn payment ON" : "Turn payment OFF"}
           </button>
+        </div>
+      </Section>
+
+      {/* Mentor signups awaiting approval. A distributor whose `verified` flag
+          is false has registered and cannot sign in — the login and dashboard
+          both gate on it. Previously they were only findable by scanning the
+          full distributor list for a PENDING tag, so a signup could sit unseen
+          indefinitely. Approving emails them. */}
+      <Section title={`Mentor Signups${(data.pendingDistributors?.length ?? 0) > 0 ? ` (${data.pendingDistributors!.length})` : ""}`} icon={UserPlus}>
+        <div className="space-y-2">
+          {/* Approval emails fail quietly on purpose — a mail outage must not
+              block an approval — so the only way to know Brevo is wired up is
+              to say so here. */}
+          {data.email && (
+            <div className="rounded-xl p-3 mb-1 flex flex-wrap items-center gap-2" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BORDER}` }}>
+              {data.email.configured
+                ? <Tag color="green">EMAIL ON</Tag>
+                : <Tag color="amber">EMAIL OFF</Tag>}
+              <p className="text-[11px]" style={{ color: MUTED }}>
+                {data.email.configured
+                  ? `Approvals email from ${data.email.sender}`
+                  : "BREVO_API_KEY / BREVO_SENDER_EMAIL not set — approvals still work, but nobody is notified."}
+              </p>
+              {data.email.signupMode === "open" && (
+                <p className="text-[11px] w-full" style={{ color: "#F0B429" }}>
+                  Signup mode is <b>open</b>: new mentors get in immediately and never appear here.
+                  Set NEXT_PUBLIC_SIGNUP_MODE=approval to gate them.
+                </p>
+              )}
+            </div>
+          )}
+          {(data.pendingDistributors?.length ?? 0) === 0 && (
+            <p className="text-xs" style={{ color: MUTED }}>No mentors waiting. New signups appear here until approved.</p>
+          )}
+          {(data.pendingDistributors ?? []).map(d => (
+            <div key={d.id} className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-white truncate">{d.name || d.email}</p>
+                  <Tag color="amber">AWAITING APPROVAL</Tag>
+                </div>
+                <p className="text-[11px] truncate" style={{ color: MUTED }}>
+                  {d.email} · signed up {new Date(d.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <ActionBtn
+                  busy={isBusy(d.id, "verify")}
+                  onClick={() => act("distributor", d.id, "verify")}
+                  icon={BadgeCheck}
+                  title="Approve — mentor can sign in, and is emailed"
+                />
+                <ActionBtn
+                  busy={isBusy(d.id, "suspend")}
+                  onClick={() => act("distributor", d.id, "suspend", `Reject ${d.email}? They will not be able to sign in.`)}
+                  icon={Ban}
+                  title="Reject"
+                  danger
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </Section>
 

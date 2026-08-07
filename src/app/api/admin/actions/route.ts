@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin, superAdminEmails, isOwnerEmail } from "@/lib/admin";
+import { sendEmail, accessGrantedEmail } from "@/lib/brevo";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+
+/** Prefer the configured site URL so emailed links work from any origin. */
+function siteOrigin(req: NextRequest): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin).replace(/\/$/, "");
+}
 
 type Body = {
   type?: "distributor" | "app_user" | "admin" | "ea" | "settings";
@@ -114,12 +120,32 @@ export async function POST(req: NextRequest) {
     }
 
     switch (action) {
+      // Approving a pending mentor. `verified` is what the login and dashboard
+      // gates read, so flipping it here is what actually grants access.
       case "verify": {
+        const { data: d } = await supabase.from("distributors")
+          .select("email, name, verified").eq("id", id).maybeSingle();
+
         const { error } = await supabase.from("distributors")
           .update({ verified: true, verified_at: new Date().toISOString(), verification_token: null })
           .eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        return NextResponse.json({ ok: true });
+
+        // Tell them. Approving in silence meant a mentor sat on the "awaiting
+        // approval" screen with no idea anything had changed — the self-serve
+        // email flow already sent this, the admin path never did.
+        // Skipped for an already-verified row so re-clicking doesn't re-notify.
+        let emailed: boolean | null = null;
+        if (d?.email && !d.verified) {
+          const loginUrl = `${siteOrigin(req)}/login`;
+          const { subject, htmlContent } = accessGrantedEmail(d.name || "", loginUrl);
+          // Best-effort: a mail failure must not roll back the approval.
+          const res = await sendEmail({ to: d.email, toName: d.name || undefined, subject, htmlContent });
+          emailed = res.sent;
+          if (!res.sent) console.error("[admin] approval email not sent:", res.error ?? res.skipped);
+        }
+
+        return NextResponse.json({ ok: true, emailed });
       }
       case "suspend":
       case "activate": {
