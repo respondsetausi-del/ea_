@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
-import { Plus, Trash2, UserCheck, UserX } from "lucide-react";
+import { Plus, Trash2, UserCheck, UserX, KeyRound } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
 const ACCENT = "#0A84FF";
@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
   /** Admins may add without a bot, and their additions skip the queue. */
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -122,6 +123,47 @@ export default function UsersPage() {
     load();
   };
 
+  /**
+   * Issue a licence key and email it.
+   *
+   * This is the step that finishes a paid signup: the user pays, gets access,
+   * lands on the app's licence screen, and waits here until a mentor sends
+   * them a key. There was no way to do it from this page at all.
+   *
+   * Note it mints a FRESH key every time — resending invalidates the old one,
+   * so a user who already had a working key has to use the new one.
+   */
+  const sendLicense = async (u: AppUser & { ea_name?: string }) => {
+    if (!confirm(
+      u.license_key
+        ? `Send ${u.email} a NEW licence key? Their current key stops working.`
+        : `Send ${u.email} a licence key by email?`,
+    )) return;
+
+    setSendingTo(u.id);
+    setError("");
+    setNotice("");
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/v1/generate-license", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ app_user_id: u.id }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    setSendingTo(null);
+
+    if (!res.ok) { setError(payload?.error || "Could not send the licence."); return; }
+    // The key is never returned in the response — it only reaches the inbox —
+    // so say plainly when email is off, or this looks like it worked.
+    setNotice(payload?.emailSent
+      ? `Licence emailed to ${u.email}.`
+      : `Key generated for ${u.email}, but email is not configured — it was not sent.`);
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -210,9 +252,21 @@ export default function UsersPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">{u.email}</p>
-                <p className="text-[10px]" style={{ color: MUTED }}>{u.ea_name || "Unknown EA"} · Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                <p className="text-[10px]" style={{ color: MUTED }}>
+                  {u.ea_name || (u.ea_id ? "Unknown EA" : "No bot assigned")} · Joined {new Date(u.created_at).toLocaleDateString()}
+                  {u.license_key ? " · licence sent" : " · no licence yet"}
+                </p>
               </div>
               <div className="flex items-center gap-1.5">
+                {/* The step that finishes a paid signup: they're waiting on the
+                    app's licence screen until this is clicked. */}
+                <button onClick={() => sendLicense(u)}
+                  disabled={sendingTo === u.id}
+                  title={u.license_key ? "Send a new licence key (replaces the old one)" : "Send licence key"}
+                  className="p-2 rounded-lg transition disabled:opacity-40"
+                  style={{ color: u.license_key ? MUTED : ACCENT }}>
+                  <KeyRound size={15} />
+                </button>
                 <button onClick={() => toggleUser(u)}
                   className="p-2 rounded-lg transition"
                   style={{ color: u.is_active ? ACCENT : MUTED }}>

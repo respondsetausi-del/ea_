@@ -308,7 +308,14 @@ export async function POST(req: NextRequest) {
         // Reuse the existing license endpoint (generates if needed + emails).
         const res = await fetch(`${req.nextUrl.origin}/api/v1/generate-license`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            // generate-license is authenticated now; forward this admin's
+            // token so it can tell who is asking.
+            ...(req.headers.get("authorization")
+              ? { Authorization: req.headers.get("authorization") as string }
+              : {}),
+          },
           body: JSON.stringify({ app_user_id: id }),
         });
         const data = await res.json().catch(() => ({}));

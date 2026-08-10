@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
-import { isSuperAdminEmail, isAdminEmailInTable } from "@/lib/admin";
+import { isSuperAdminEmail, isAdminEmailInTable, resolveCaller } from "@/lib/admin";
 import { generateUniqueKey } from "@/lib/license";
 
 function getSupabase() {
@@ -39,6 +39,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "app_user_id is required" }, { status: 400 });
   }
 
+  // This endpoint was unauthenticated, and it mints a FRESH key on every call
+  // — so anyone able to POST could rotate a paying user's licence and lock
+  // them out of the app. Issuing a key is now restricted to the mentor who
+  // owns the row, or an admin.
+  const caller = await resolveCaller(req);
+  if (!caller.ok || !caller.user) {
+    return NextResponse.json({ error: caller.error ?? "Unauthorized" }, { status: caller.status });
+  }
+  const isAdmin = caller.role === "super" || caller.role === "staff";
+
   // Load the invited user + their distributor's branding (for the app name).
   const { data: appUser, error } = await supabase
     .from("app_users")
@@ -52,6 +62,9 @@ export async function POST(req: NextRequest) {
   }
   if (!appUser) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (!isAdmin && appUser.distributor_id !== caller.user.id) {
+    return NextResponse.json({ error: "That user isn't yours" }, { status: 403 });
   }
 
   // Always generate a fresh key (even on resend).
