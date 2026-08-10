@@ -59,19 +59,52 @@ export function getServiceClient(): SupabaseClient | null {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+/**
+ * Admin tiers.
+ *
+ *  super — god mode: suspend/delete accounts, grant admin, platform settings
+ *  staff — delegated: sees mentors and paid clients, and may approve or reject
+ *          them. Nothing destructive, no admin management, no settings.
+ */
+export type AdminRole = "super" | "staff";
+
 export interface SuperAdminResult {
   ok: boolean;
   status: number;
   error?: string;
   user?: { id: string; email: string | null };
   supabase?: SupabaseClient;
+  role?: AdminRole;
 }
 
 /**
- * Validate the request's bearer token and confirm the caller is a super admin.
- * Returns a service-role client (RLS-bypassing) for god-mode reads/writes.
+ * The actions a staff admin is allowed to perform, as `${type}.${action}`.
+ *
+ * An allowlist rather than a blocklist on purpose: a new destructive action
+ * added later is denied to staff by default instead of silently inheriting.
  */
-export async function requireSuperAdmin(req: NextRequest): Promise<SuperAdminResult> {
+const STAFF_ALLOWED = new Set([
+  "distributor.verify",
+  "app_user.approve",
+  "app_user.reject",
+]);
+
+export function staffCanPerform(type: string, action: string): boolean {
+  return STAFF_ALLOWED.has(`${type}.${action}`);
+}
+
+/** Super admin outranks staff, so the lesser flag is cleared on promotion. */
+export const SUPER_ADMIN_UPDATE = { is_super_admin: true, is_staff_admin: false } as const;
+
+/**
+ * Validate the request's bearer token and resolve the caller's admin tier.
+ * Returns a service-role client (RLS-bypassing) for the reads/writes allowed
+ * at that tier.
+ *
+ * `allowStaff` defaults to false so every existing caller keeps its
+ * super-admin-only behaviour unless it opts in.
+ */
+export async function requireAdmin(req: NextRequest, opts: { allowStaff?: boolean } = {}): Promise<SuperAdminResult> {
   const supabase = getServiceClient();
   if (!supabase) return { ok: false, status: 503, error: "Server not configured" };
 
@@ -85,16 +118,19 @@ export async function requireSuperAdmin(req: NextRequest): Promise<SuperAdminRes
   const user = userData.user;
   const email = user.email ?? null;
 
-  // Pull the distributor row (flag) and the runtime allowlist (table).
+  // Pull the distributor row (flags) and the runtime allowlist (table).
   const [{ data: distributor }, byTable] = await Promise.all([
-    supabase.from("distributors").select("id, is_super_admin").eq("id", user.id).maybeSingle(),
+    supabase.from("distributors").select("id, is_super_admin, is_staff_admin").eq("id", user.id).maybeSingle(),
     isAdminEmailInTable(supabase, email),
   ]);
 
   const byEmail = isSuperAdminEmail(email);
   const byFlag = !!distributor?.is_super_admin;
+  const isSuper = byEmail || byFlag || byTable;
+  // Super admin outranks staff, so a super admin never resolves as staff.
+  const isStaff = !isSuper && !!distributor?.is_staff_admin;
 
-  if (!byEmail && !byFlag && !byTable) {
+  if (!isSuper && !(opts.allowStaff && isStaff)) {
     return { ok: false, status: 403, error: "Forbidden" };
   }
 
@@ -103,5 +139,16 @@ export async function requireSuperAdmin(req: NextRequest): Promise<SuperAdminRes
     await supabase.from("distributors").update({ is_super_admin: true }).eq("id", user.id);
   }
 
-  return { ok: true, status: 200, user: { id: user.id, email }, supabase };
+  return {
+    ok: true,
+    status: 200,
+    user: { id: user.id, email },
+    supabase,
+    role: isSuper ? "super" : "staff",
+  };
+}
+
+/** Super-admin only. Unchanged behaviour for every existing caller. */
+export async function requireSuperAdmin(req: NextRequest): Promise<SuperAdminResult> {
+  return requireAdmin(req);
 }

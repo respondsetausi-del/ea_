@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin, superAdminEmails, isOwnerEmail } from "@/lib/admin";
+import { requireAdmin, staffCanPerform, superAdminEmails, isOwnerEmail, SUPER_ADMIN_UPDATE } from "@/lib/admin";
 import { sendEmail, accessGrantedEmail } from "@/lib/brevo";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -32,7 +32,9 @@ async function accessDays(supabase: SupabaseClient): Promise<number> {
 /** Add an email to the runtime allowlist and flag any matching distributor. */
 async function grantAdminByEmail(supabase: SupabaseClient, email: string) {
   await supabase.from("admin_emails").upsert({ email }, { onConflict: "email" });
-  await supabase.from("distributors").update({ is_super_admin: true }).ilike("email", email);
+  // Clears is_staff_admin too: super outranks staff, and leaving both set
+  // would show the account in two tiers at once.
+  await supabase.from("distributors").update(SUPER_ADMIN_UPDATE).ilike("email", email);
 }
 /** Remove an email from the allowlist and unflag any matching distributor. */
 async function revokeAdminByEmail(supabase: SupabaseClient, email: string) {
@@ -48,7 +50,7 @@ async function revokeAdminByEmail(supabase: SupabaseClient, email: string) {
  * app_user:    approve | reject | activate | deactivate | delete | resendLicense
  */
 export async function POST(req: NextRequest) {
-  const gate = await requireSuperAdmin(req);
+  const gate = await requireAdmin(req, { allowStaff: true });
   if (!gate.ok || !gate.supabase || !gate.user) {
     return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
@@ -63,6 +65,15 @@ export async function POST(req: NextRequest) {
   }
 
   const { type, id, action } = body;
+
+  // Staff admins may only approve/reject. Enforced here rather than by hiding
+  // buttons — the UI is a convenience, this is the actual boundary.
+  if (gate.role === "staff" && !staffCanPerform(String(type), String(action))) {
+    return NextResponse.json(
+      { error: "Your admin role can approve and reject, but not perform this action." },
+      { status: 403 },
+    );
+  }
 
   // ── Admin allowlist management (add admins at will, by email) ──
   if (type === "admin") {
@@ -151,6 +162,25 @@ export async function POST(req: NextRequest) {
       case "activate": {
         const { error } = await supabase.from("distributors")
           .update({ is_active: action === "activate" }).eq("id", id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
+      // Delegated admin: can see mentors and paid clients and approve them,
+      // but nothing destructive. Deliberately separate from grantAdmin so
+      // handing someone the approval queue doesn't hand them god mode.
+      case "grantStaff":
+      case "revokeStaff": {
+        const granting = action === "grantStaff";
+        const { data: d } = await supabase.from("distributors")
+          .select("email, is_super_admin").eq("id", id).maybeSingle();
+        if (granting && d?.is_super_admin) {
+          return NextResponse.json(
+            { error: "Already a super admin — staff is a lesser role." },
+            { status: 400 },
+          );
+        }
+        const { error } = await supabase.from("distributors")
+          .update({ is_staff_admin: granting }).eq("id", id);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         return NextResponse.json({ ok: true });
       }

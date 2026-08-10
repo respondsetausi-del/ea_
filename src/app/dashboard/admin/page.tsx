@@ -30,7 +30,7 @@ const appLabel = (app: string) => APP_LABELS[app] || app;
 
 type Distributor = {
   id: string; email: string; name: string; verified: boolean; onboarded: boolean;
-  isSuperAdmin: boolean; isActive: boolean; createdAt: string;
+  isSuperAdmin: boolean; isStaffAdmin?: boolean; isActive: boolean; createdAt: string;
   eaCount: number; userCount: number; licensesSent: number;
 };
 type AppUser = {
@@ -556,6 +556,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-bold text-white truncate">{d.name}</p>
                   {d.isSuperAdmin && <Tag color="amber">ADMIN</Tag>}
+                  {!d.isSuperAdmin && d.isStaffAdmin && <Tag color="blue">STAFF</Tag>}
                   {d.verified ? <Tag color="green">APPROVED</Tag> : <Tag color="amber">PENDING</Tag>}
                   {!d.isActive && <Tag color="red">SUSPENDED</Tag>}
                 </div>
@@ -569,6 +570,12 @@ export default function AdminPage() {
                 {d.isSuperAdmin
                   ? <ActionBtn busy={isBusy(d.id, "revokeAdmin")} onClick={() => act("distributor", d.id, "revokeAdmin", `Revoke admin from ${d.name}?`)} icon={Crown} title="Revoke admin" danger />
                   : <ActionBtn busy={isBusy(d.id, "grantAdmin")} onClick={() => act("distributor", d.id, "grantAdmin", `Grant super-admin to ${d.name}?`)} icon={Crown} title="Grant admin" />}
+                {/* Staff = can see mentors and paid clients and approve them,
+                    nothing destructive. Hidden for super admins, who already
+                    outrank it. */}
+                {!d.isSuperAdmin && (d.isStaffAdmin
+                  ? <ActionBtn busy={isBusy(d.id, "revokeStaff")} onClick={() => act("distributor", d.id, "revokeStaff", `Remove staff-admin from ${d.name}?`)} icon={ShieldCheck} title="Remove staff admin" danger />
+                  : <ActionBtn busy={isBusy(d.id, "grantStaff")} onClick={() => act("distributor", d.id, "grantStaff", `Make ${d.name} a staff admin?\n\nThey will be able to see mentors and paid clients, and approve or reject them. They cannot suspend, delete, grant admin, or change settings.`)} icon={ShieldCheck} title="Make staff admin — approve only" />)}
                 <ActionBtn busy={isBusy(d.id, "resetPassword")} onClick={() => act("distributor", d.id, "resetPassword", `Email a password-reset link to ${d.name} (${d.email})?`)} icon={KeyRound} title="Send password reset" />
                 <ActionBtn busy={isBusy(d.id, "delete")} onClick={() => act("distributor", d.id, "delete", `DELETE ${d.name} and ALL their data? This cannot be undone.`)} icon={Trash2} title="Delete" danger />
               </div>
@@ -640,9 +647,10 @@ export default function AdminPage() {
                   : "BREVO_API_KEY / BREVO_SENDER_EMAIL not set — approvals still work, but nobody is notified."}
               </p>
               {data.email.signupMode === "open" && (
-                <p className="text-[11px] w-full" style={{ color: "#F0B429" }}>
-                  Signup mode is <b>open</b>: new mentors get in immediately and never appear here.
-                  Set NEXT_PUBLIC_SIGNUP_MODE=approval to gate them.
+                <p className="text-[11px] w-full" style={{ color: MUTED }}>
+                  Signup mode is <b>open</b>: mentors can use the dashboard as soon as they register.
+                  This list is a record of who hasn&apos;t been formally approved yet — approving clears
+                  them from it and emails them. Set NEXT_PUBLIC_SIGNUP_MODE=approval to make it a gate.
                 </p>
               )}
             </div>
@@ -844,12 +852,14 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
   );
 }
 
-function Tag({ color, children }: { color: "green" | "red" | "amber" | "gray"; children: React.ReactNode }) {
+function Tag({ color, children }: { color: "green" | "red" | "amber" | "gray" | "blue"; children: React.ReactNode }) {
   const map: Record<string, { bg: string; fg: string }> = {
     green: { bg: "rgba(10,132,255,0.12)", fg: ACCENT },
     red: { bg: "rgba(239,68,68,0.12)", fg: "#EF4444" },
     amber: { bg: "rgba(245,158,11,0.12)", fg: "#F59E0B" },
     gray: { bg: "rgba(255,255,255,0.06)", fg: MUTED },
+    // Distinct from ADMIN's amber so the two tiers don't read as the same thing.
+    blue: { bg: "rgba(139,92,246,0.14)", fg: "#A78BFA" },
   };
   const c = map[color];
   return (

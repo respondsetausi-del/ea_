@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
+import { requireAdmin, superAdminEmails, ownerEmails, isOwnerEmail } from "@/lib/admin";
 import { resolveInstantActivationEA, INSTANT_ACTIVATION_EA_NAME } from "@/lib/instant-activation";
 import { isBrevoConfigured } from "@/lib/brevo";
 
@@ -61,7 +61,7 @@ function buildTraffic(
  * license status), and the live MQTT monitor from the app server.
  */
 export async function GET(req: NextRequest) {
-  const gate = await requireSuperAdmin(req);
+  const gate = await requireAdmin(req, { allowStaff: true });
   if (!gate.ok || !gate.supabase) {
     return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
   const eventsSince = new Date(Date.now() - 31 * 86_400_000).toISOString();
   const [{ data: distributors }, { data: eas }, { data: appUsers }, { data: adminEmails }, { data: mt5Conns }, { data: events }] = await Promise.all([
     supabase.from("distributors")
-      .select("id, email, name, verified, onboarded, is_super_admin, is_active, created_at")
+      .select("id, email, name, verified, onboarded, is_super_admin, is_staff_admin, is_active, created_at")
       .order("created_at", { ascending: false }),
     supabase.from("eas").select("id, distributor_id, name, mentor_id, is_active"),
     supabase.from("app_users")
@@ -130,6 +130,7 @@ export async function GET(req: NextRequest) {
     verified: d.verified,
     onboarded: d.onboarded,
     isSuperAdmin: d.is_super_admin,
+    isStaffAdmin: !!d.is_staff_admin,
     isActive: d.is_active,
     createdAt: d.created_at,
     eaCount: easList.filter(e => e.distributor_id === d.id).length,
@@ -356,5 +357,29 @@ export async function GET(req: NextRequest) {
     signupMode: (process.env.NEXT_PUBLIC_SIGNUP_MODE || "open").toLowerCase(),
   };
 
-  return NextResponse.json({ stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, pendingDistributors, admins, eas: easRows, mt5Connections, instantActivation, mqtt, email, settings: { requirePayment } });
+  // Staff admins get mentors and paid clients plus the queues they can act on
+  // — and nothing else. Withheld here rather than hidden in the UI, so the data
+  // never reaches the browser in the first place.
+  if (gate.role === "staff") {
+    const paidClients = appUserRows.filter(u => u.paidAt || u.accessVia === "payment");
+    return NextResponse.json({
+      role: "staff",
+      stats: {
+        distributors: distributorRows.length,
+        pendingDistributors: pendingDistributors.length,
+        paidUsers: paidClients.length,
+        pendingRequests: pendingRequests.length,
+      },
+      distributors: distributorRows,
+      appUsers: paidClients,
+      pendingRequests,
+      pendingDistributors,
+      admins: [],
+      mt5Connections: [],
+      mqtt: { configured: false },
+      email,
+    });
+  }
+
+  return NextResponse.json({ role: "super", stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, pendingDistributors, admins, eas: easRows, mt5Connections, instantActivation, mqtt, email, settings: { requirePayment } });
 }
