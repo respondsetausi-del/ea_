@@ -83,6 +83,13 @@ type Overview = {
   /** Mentors who have signed up but aren't approved yet. */
   pendingDistributors?: Distributor[];
   email?: { configured: boolean; sender: string | null; senderName: string; signupMode: string };
+  /** Owner-only. Null for any other admin. */
+  stripeEvents?: {
+    event_id: string; event_type: string; session_id: string | null; email: string | null;
+    amount_total: number | null; currency: string | null; livemode: boolean | null;
+    payment_status: string | null; payment_intent: string | null; processed_at: string;
+  }[] | null;
+  viewerIsOwner?: boolean;
   settings?: { requirePayment: boolean };
   admins: Admin[];
   eas?: EARow[];
@@ -625,6 +632,61 @@ export default function AdminPage() {
           </button>
         </div>
       </Section>
+
+      {/* Stripe payments — owner only.
+          Every row here arrived on a request whose signature verified against
+          STRIPE_WEBHOOK_SECRET, which only Stripe can produce. The figures are
+          Stripe's own, and `livemode` separates real money from test traffic,
+          so this list is itself the proof rather than a claim about it. */}
+      {data.viewerIsOwner && (
+        <Section title={`Stripe Payments${(data.stripeEvents?.length ?? 0) > 0 ? ` (${data.stripeEvents!.length})` : ""}`} icon={Lock}>
+          <div className="space-y-2">
+            <p className="text-[11px]" style={{ color: MUTED }}>
+              Signature-verified Stripe events. Visible to the owner only.
+            </p>
+            {(data.stripeEvents?.length ?? 0) === 0 && (
+              <p className="text-xs" style={{ color: MUTED }}>
+                No payments recorded yet. Events appear here the moment Stripe delivers one.
+              </p>
+            )}
+            {(data.stripeEvents ?? []).map(ev => (
+              <div key={ev.event_id} className="rounded-xl p-4 flex flex-wrap items-center gap-3"
+                   style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-white truncate">{ev.email || "—"}</p>
+                    {ev.amount_total != null && (
+                      <Tag color="green">
+                        {(ev.amount_total / 100).toFixed(2)} {(ev.currency || "").toUpperCase()}
+                      </Tag>
+                    )}
+                    {ev.livemode === true ? <Tag color="green">LIVE</Tag> : <Tag color="amber">TEST</Tag>}
+                    {ev.payment_status && ev.payment_status !== "paid" && (
+                      <Tag color="amber">{ev.payment_status.toUpperCase()}</Tag>
+                    )}
+                  </div>
+                  <p className="text-[11px] truncate" style={{ color: MUTED }}>
+                    {new Date(ev.processed_at).toLocaleString()} · {ev.event_type}
+                  </p>
+                  <p className="text-[10px] truncate font-mono" style={{ color: MUTED }}>
+                    {ev.event_id}
+                  </p>
+                </div>
+                {ev.payment_intent && (
+                  <a
+                    href={`https://dashboard.stripe.com/payments/${ev.payment_intent}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[11px] font-semibold hover:opacity-80"
+                    style={{ color: ACCENT }}
+                  >
+                    Verify in Stripe →
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* Mentor signups awaiting approval. A distributor whose `verified` flag
           is false has registered and cannot sign in — the login and dashboard

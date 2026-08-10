@@ -175,12 +175,45 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase();
   if (!supabase) return NextResponse.json({ error: "Server not configured" }, { status: 503 });
 
-  // Idempotency: Stripe redelivers. The unique index on stripe_session_id
-  // makes a repeat a no-op rather than a second 30-day grant.
-  if (sessionId) {
-    const { data: seen } = await supabase
-      .from("app_users").select("id").eq("stripe_session_id", sessionId).maybeSingle();
-    if (seen) return NextResponse.json({ received: true, duplicate: true });
+  // Idempotency, keyed on the EVENT id.
+  //
+  // This previously looked for an app_users row already carrying this session
+  // id — but that column holds only the latest payment and is overwritten on
+  // the next one, so a redelivery of an earlier event found nothing and was
+  // granted a second window. Stripe retries for up to three days, and this
+  // endpoint spent its first minutes returning 404 then 503, so those retries
+  // were real: one account accumulated four windows from a single payment.
+  //
+  // An insert that conflicts means we have already acted on this event. The
+  // claim is staked BEFORE granting anything, so two concurrent deliveries of
+  // the same event can't both pass the check.
+  const eventId = (event as { id?: string }).id || "";
+  if (eventId) {
+    const { error: claimErr } = await supabase.from("stripe_events").insert({
+      event_id: eventId,
+      event_type: type,
+      session_id: sessionId || null,
+      email: email || null,
+      // Proof this came from Stripe and not a hand-rolled POST: the request
+      // carried a signature that verified against STRIPE_WEBHOOK_SECRET (we
+      // never reach here otherwise), and these are Stripe's own figures.
+      // livemode distinguishes real money from test-mode traffic.
+      amount_total: Number.isFinite(Number(session.amount_total)) ? Number(session.amount_total) : null,
+      currency: session.currency ?? null,
+      livemode: session.livemode ?? null,
+      payment_status: session.payment_status ?? null,
+      payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    });
+    if (claimErr) {
+      // 23505 = already present → this is a retry.
+      if ((claimErr as { code?: string }).code === "23505") {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Anything else (table missing, DB down) is not proof of a duplicate.
+      // Fail loudly so Stripe retries, rather than risk double-granting.
+      console.error("[stripe-webhook] could not claim event:", claimErr);
+      return NextResponse.json({ error: "Could not record event" }, { status: 500 });
+    }
   }
 
   const now = new Date();
@@ -208,10 +241,15 @@ export async function POST(req: NextRequest) {
       paid_at: now.toISOString(),
       stripe_session_id: sessionId || null,
       access_expires_at: new Date(base + days * 86_400_000).toISOString(),
+      // Always activate on payment. This used to live inside `if (approve)`,
+      // but the dashboard inserted mentor-added rows with is_active = false —
+      // so someone added by a mentor who then paid stayed deactivated and
+      // could not sign in despite the money clearing. Whatever else is true,
+      // taking payment must not leave the account switched off.
+      is_active: true,
     };
     if (approve) {
       update.status = "approved";
-      update.is_active = true;
       update.approved_at = now.toISOString();
       update.approved_by = "stripe:auto";
     }

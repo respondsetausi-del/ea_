@@ -357,6 +357,21 @@ export async function GET(req: NextRequest) {
     signupMode: (process.env.NEXT_PUBLIC_SIGNUP_MODE || "open").toLowerCase(),
   };
 
+  // Payment records stay with the owner (super super admin) — not staff, and
+  // not other super admins. A row exists only if a request arrived carrying a
+  // signature that verified against STRIPE_WEBHOOK_SECRET, so the list is
+  // itself the evidence that the money came through Stripe.
+  const viewerIsOwner = isOwnerEmail(gate.user!.email);
+  let stripeEvents: unknown[] | null = null;
+  if (viewerIsOwner) {
+    const { data: evs } = await supabase
+      .from("stripe_events")
+      .select("event_id, event_type, session_id, email, amount_total, currency, livemode, payment_status, payment_intent, processed_at")
+      .order("processed_at", { ascending: false })
+      .limit(100);
+    stripeEvents = evs ?? [];
+  }
+
   // Staff admins get mentors and paid clients plus the queues they can act on
   // — and nothing else. Withheld here rather than hidden in the UI, so the data
   // never reaches the browser in the first place.
@@ -381,5 +396,5 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ role: "super", stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, pendingDistributors, admins, eas: easRows, mt5Connections, instantActivation, mqtt, email, settings: { requirePayment } });
+  return NextResponse.json({ role: "super", stats, analytics, distributors: distributorRows, appUsers: appUserRows, pendingRequests, pendingDistributors, admins, eas: easRows, mt5Connections, instantActivation, mqtt, email, stripeEvents, viewerIsOwner, settings: { requirePayment } });
 }
