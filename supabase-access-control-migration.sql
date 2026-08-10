@@ -51,8 +51,18 @@ create unique index if not exists app_users_email_no_ea_idx
 create or replace function public.enforce_app_user_access_fields()
 returns trigger as $$
 begin
-  -- Service role = our server code, which has already done the role check.
-  if auth.role() = 'service_role' then
+  -- Two legitimate writers:
+  --   service_role — our API routes, which have already checked the caller's
+  --                  admin tier before deciding what the row may say
+  --   postgres / supabase_admin — a direct console session, i.e. the owner in
+  --                  the SQL editor
+  --
+  -- The console case is not optional. Checking only auth.role() silently
+  -- reverted every manual correction made in the Supabase SQL editor: the
+  -- UPDATE reported success, the trigger copied the old value back, and the
+  -- data never changed. Fixing access by hand has to keep working.
+  if auth.role() = 'service_role'
+     or current_user in ('postgres', 'supabase_admin', 'service_role') then
     return new;
   end if;
 
