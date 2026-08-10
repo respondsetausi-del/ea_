@@ -96,6 +96,59 @@ export function staffCanPerform(type: string, action: string): boolean {
 /** Super admin outranks staff, so the lesser flag is cleared on promotion. */
 export const SUPER_ADMIN_UPDATE = { is_super_admin: true, is_staff_admin: false } as const;
 
+export interface CallerResult {
+  ok: boolean;
+  status: number;
+  error?: string;
+  user?: { id: string; email: string | null };
+  supabase?: SupabaseClient;
+  /** null = a signed-in distributor with no admin tier (an ordinary mentor). */
+  role?: AdminRole | null;
+}
+
+/**
+ * Identify the caller without demanding they be an admin.
+ *
+ * requireAdmin() answers "may this person act as an admin?" and 403s a mentor.
+ * This answers "who is this?", which is what an endpoint used by both mentors
+ * and admins needs — the tier then decides what the write is allowed to say,
+ * rather than whether it happens at all.
+ */
+export async function resolveCaller(req: NextRequest): Promise<CallerResult> {
+  const supabase = getServiceClient();
+  if (!supabase) return { ok: false, status: 503, error: "Server not configured" };
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (!token) return { ok: false, status: 401, error: "Missing auth token" };
+
+  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+  if (userErr || !userData.user) return { ok: false, status: 401, error: "Invalid session" };
+
+  const user = userData.user;
+  const email = user.email ?? null;
+
+  const [{ data: distributor }, byTable] = await Promise.all([
+    supabase.from("distributors").select("id, is_super_admin, is_staff_admin, is_active").eq("id", user.id).maybeSingle(),
+    isAdminEmailInTable(supabase, email),
+  ]);
+
+  if (distributor && distributor.is_active === false) {
+    return { ok: false, status: 403, error: "This account has been suspended" };
+  }
+
+  const isSuper = isSuperAdminEmail(email) || !!distributor?.is_super_admin || byTable;
+  const isStaff = !isSuper && !!distributor?.is_staff_admin;
+
+  return {
+    ok: true,
+    status: 200,
+    user: { id: user.id, email },
+    supabase,
+    role: isSuper ? "super" : isStaff ? "staff" : null,
+  };
+}
+
 /**
  * Validate the request's bearer token and resolve the caller's admin tier.
  * Returns a service-role client (RLS-bypassing) for the reads/writes allowed

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, DEV_MODE } from "@/lib/supabase";
+import { isSuperAdminNow } from "@/lib/admin-client";
 import { Plus, Trash2, UserCheck, UserX } from "lucide-react";
 import type { AppUser, EA } from "@/lib/database.types";
 
@@ -19,6 +20,16 @@ export default function UsersPage() {
   const [form, setForm] = useState({ email: "", ea_id: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  /** Admins may add without a bot, and their additions skip the queue. */
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setIsAdmin(await isSuperAdminNow(data.user?.email));
+    })();
+  }, []);
 
   const load = async () => {
     if (DEV_MODE) {
@@ -58,40 +69,43 @@ export default function UsersPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!form.ea_id) { setError("Select a trading bot"); return; }
+    // A bot is required for mentors and optional for admins; the server decides
+    // which applies, so don't second-guess it here.
+    if (!form.ea_id && !isAdmin) { setError("Select a trading bot"); return; }
     setSaving(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Creation runs server-side now. Inserting from the browser meant "pending"
+    // was enforced only by this file — RLS lets a distributor write any column
+    // on their own rows, so a crafted request could self-approve.
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/users/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ email: form.email, ea_id: form.ea_id || null }),
+    });
+    const payload = await res.json().catch(() => ({}));
 
-    // Explicitly pending: a new client is a request for the super admin to
-    // approve (after confirming payment), not immediate access.
-    // is_active is forced false as well — it defaults to true, and any consumer
-    // that only checks is_active (e.g. /api/v1/config) would otherwise let an
-    // unapproved client straight in.
-    const { data: newUser, error } = await supabase.from("app_users").insert({
-      distributor_id: user.id,
-      ea_id: form.ea_id,
-      email: form.email,
-      status: "pending",
-      is_active: false,
-    }).select("id").single();
-
-    if (error) {
-      setError(error.message.includes("duplicate") ? "User already exists for this EA" : error.message);
+    if (!res.ok) {
+      setError(payload?.error || "Could not add this user.");
       setSaving(false);
       return;
     }
 
     // Fire-and-forget welcome email (doc item 1).
-    if (newUser?.id) {
+    if (payload?.user?.id) {
       fetch("/api/v1/welcome-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_user_id: newUser.id }),
+        body: JSON.stringify({ app_user_id: payload.user.id }),
       }).catch(() => {});
     }
 
+    setNotice(payload?.approvedImmediately
+      ? `${form.email} has access${form.ea_id ? "" : " — assign a bot when ready"}.`
+      : `${form.email} added and awaiting approval.`);
     setForm({ email: "", ea_id: form.ea_id });
     setSaving(false);
     load();
@@ -139,18 +153,28 @@ export default function UsersPage() {
                 placeholder="user@example.com" required />
             </div>
             <div>
-              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>TRADING BOT</label>
+              <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>
+                TRADING BOT{isAdmin && <span style={{ color: MUTED }}> (OPTIONAL)</span>}
+              </label>
               <select value={form.ea_id} onChange={e => setForm(f => ({ ...f, ea_id: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition"
                 style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
                 onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
                 onBlur={e => e.target.style.borderColor = BORDER}>
-                <option value="">Select EA...</option>
+                <option value="">{isAdmin ? "No bot — grant access only" : "Select EA..."}</option>
                 {eas.map(ea => <option key={ea.id} value={ea.id}>{ea.name} ({ea.mentor_id})</option>)}
               </select>
             </div>
           </div>
+          {/* Say what the button will actually do — admin additions skip the
+              approval queue, a mentor's do not, and that's invisible otherwise. */}
+          <p className="text-[11px]" style={{ color: MUTED }}>
+            {isAdmin
+              ? "You're an admin — this user gets access immediately."
+              : "This user will wait for admin approval before they can sign in."}
+          </p>
           {error && <p className="text-red-400 text-xs">{error}</p>}
+          {notice && <p className="text-xs" style={{ color: "#30D158" }}>{notice}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
               className="px-6 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50 text-black"
