@@ -31,7 +31,21 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setError(error.message);
+      // Supabase's raw messages are written for developers, not the person
+      // trying to sign up. "email rate limit exceeded" in particular reads as
+      // the user's fault when it's ours: Supabase's built-in mailer allows only
+      // a handful of messages an hour, and it fires one on every signup while
+      // "Confirm email" is on. Nothing the user does will help.
+      const raw = (error.message || "").toLowerCase();
+      setError(
+        raw.includes("rate limit")
+          ? "We can't create accounts right now — our email service has hit its limit. Please try again shortly, or contact support."
+        : raw.includes("already registered") || raw.includes("already exists")
+          ? "That email already has an account. Try signing in instead."
+        : raw.includes("password")
+          ? "That password is too weak — use at least 6 characters."
+        : error.message,
+      );
       setLoading(false);
       return;
     }
