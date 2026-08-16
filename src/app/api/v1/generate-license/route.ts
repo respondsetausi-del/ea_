@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
-import { isSuperAdminEmail, isAdminEmailInTable, resolveCaller } from "@/lib/admin";
+import { resolveCaller } from "@/lib/admin";
 import { generateUniqueKey } from "@/lib/license";
 
 function getSupabase() {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Server not configured" }, { status: 503 });
   }
 
-  let body: { app_user_id?: string; caller_email?: string };
+  let body: { app_user_id?: string; rotate?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -67,8 +67,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That user isn't yours" }, { status: 403 });
   }
 
-  // Always generate a fresh key (even on resend).
-  const licenseKey = await generateUniqueKey(supabase);
+  // Reuse the existing key unless rotation is asked for explicitly.
+  //
+  // This minted a fresh key on every call, so the obvious action — clicking
+  // "send licence" again because the user says nothing arrived — silently
+  // invalidated the key already on their device. Resending should resend, not
+  // revoke.
+  const rotate = body.rotate === true;
+  const licenseKey = !rotate && appUser.license_key
+    ? appUser.license_key
+    : await generateUniqueKey(supabase);
 
   const { data: branding } = await supabase
     .from("branding")
@@ -90,12 +98,15 @@ export async function POST(req: NextRequest) {
   const { subject, htmlContent } = licenseEmail(branding?.app_name || "EA NAPTUNE", licenseKey);
   const result = await sendEmail({ to: appUser.email, subject, htmlContent });
 
-  // Check if the caller is a super admin — reveal the key to them only.
-  const callerEmail = body.caller_email?.trim().toLowerCase();
-  let callerIsSuperAdmin = false;
-  if (callerEmail) {
-    callerIsSuperAdmin = isSuperAdminEmail(callerEmail) || await isAdminEmailInTable(supabase, callerEmail);
-  }
+  // Return the key to whoever is entitled to hand it over.
+  //
+  // Two changes here. It keyed off `caller_email` from the request BODY, which
+  // is unverified — anyone could name the super admin and be given the key. It
+  // now uses the role resolved from the bearer token above. And it includes
+  // the owning mentor, not admins alone: without email configured, a key that
+  // nobody can read is a key that was never issued, and the mentor is the one
+  // who has to pass it to the user.
+  const canSeeKey = isAdmin || appUser.distributor_id === caller.user.id;
 
   return NextResponse.json({
     ok: true,
@@ -103,6 +114,6 @@ export async function POST(req: NextRequest) {
     emailSkipped: result.skipped ?? false,
     emailError: result.error ?? null,
     sent_at: nowIso,
-    ...(callerIsSuperAdmin ? { license_key: licenseKey } : {}),
+    ...(canSeeKey ? { license_key: licenseKey } : {}),
   });
 }

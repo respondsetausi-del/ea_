@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "crypto";
 import { resolveInstantActivationEA } from "@/lib/instant-activation";
+import { generateUniqueKey } from "@/lib/license";
 
 /**
  * POST /api/v1/stripe-webhook
@@ -223,7 +224,7 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from("app_users")
-    .select("id, access_expires_at, status")
+    .select("id, access_expires_at, status, license_key")
     .ilike("email", email)
     .order("created_at", { ascending: true });
 
@@ -248,6 +249,18 @@ export async function POST(req: NextRequest) {
       // taking payment must not leave the account switched off.
       is_active: true,
     };
+    // Issue the licence key here, because nothing else does. Access was being
+    // granted (paid_at, window, is_active, approved) while license_key stayed
+    // null — so a payer landed on the app's licence screen with no key to type
+    // and got "Invalid License". The key had to be minted by hand from the
+    // dashboard, which meant every paid signup silently stalled.
+    //
+    // Only when absent: this runs on renewals too, and rotating a key that is
+    // already on someone's device would lock them out for paying again.
+    if (!row.license_key) {
+      update.license_key = await generateUniqueKey(supabase);
+      update.license_sent_at = now.toISOString();
+    }
     if (approve) {
       update.status = "approved";
       update.approved_at = now.toISOString();
@@ -280,6 +293,8 @@ export async function POST(req: NextRequest) {
     stripe_session_id: sessionId || null,
     access_expires_at: expiresAt,
     access_via: "stripe",
+    license_key: await generateUniqueKey(supabase),
+    license_sent_at: now.toISOString(),
     ...(approve
       ? { status: "approved", is_active: true, approved_at: now.toISOString(), approved_by: "stripe:auto" }
       : {}),

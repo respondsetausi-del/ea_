@@ -130,14 +130,14 @@ export default function UsersPage() {
    * lands on the app's licence screen, and waits here until a mentor sends
    * them a key. There was no way to do it from this page at all.
    *
-   * Note it mints a FRESH key every time — resending invalidates the old one,
-   * so a user who already had a working key has to use the new one.
+   * Resending returns the same key rather than minting a new one, so clicking
+   * this twice can't strand a user who is already activated.
    */
   const sendLicense = async (u: AppUser & { ea_name?: string }) => {
     if (!confirm(
       u.license_key
-        ? `Send ${u.email} a NEW licence key? Their current key stops working.`
-        : `Send ${u.email} a licence key by email?`,
+        ? `Resend ${u.email} their existing licence key?`
+        : `Issue ${u.email} a licence key?`,
     )) return;
 
     setSendingTo(u.id);
@@ -156,11 +156,18 @@ export default function UsersPage() {
     setSendingTo(null);
 
     if (!res.ok) { setError(payload?.error || "Could not send the licence."); return; }
-    // The key is never returned in the response — it only reaches the inbox —
-    // so say plainly when email is off, or this looks like it worked.
-    setNotice(payload?.emailSent
-      ? `Licence emailed to ${u.email}.`
-      : `Key generated for ${u.email}, but email is not configured — it was not sent.`);
+    // Show the key here as well as emailing it. It used to reach the inbox
+    // only, so with email unconfigured the key was written to the database and
+    // shown to nobody — the user waited for a mail that never sent and the
+    // mentor had no way to read what to tell them.
+    const key = payload?.license_key as string | undefined;
+    setNotice(
+      payload?.emailSent
+        ? `Licence emailed to ${u.email}.${key ? ` Key: ${key}` : ""}`
+      : key
+        ? `Email is not configured, so nothing was sent. Give ${u.email} this key: ${key}`
+        : `Key generated for ${u.email}, but email is not configured — it was not sent.`,
+    );
     load();
   };
 
@@ -262,7 +269,7 @@ export default function UsersPage() {
                     app's licence screen until this is clicked. */}
                 <button onClick={() => sendLicense(u)}
                   disabled={sendingTo === u.id}
-                  title={u.license_key ? "Send a new licence key (replaces the old one)" : "Send licence key"}
+                  title={u.license_key ? "Resend their licence key" : "Issue licence key"}
                   className="p-2 rounded-lg transition disabled:opacity-40"
                   style={{ color: u.license_key ? MUTED : ACCENT }}>
                   <KeyRound size={15} />
