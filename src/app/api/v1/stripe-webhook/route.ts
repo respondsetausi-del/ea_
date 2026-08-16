@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "crypto";
 import { resolveInstantActivationEA } from "@/lib/instant-activation";
-import { generateUniqueKey } from "@/lib/license";
 
 /**
  * POST /api/v1/stripe-webhook
@@ -105,44 +104,6 @@ async function accessDays(supabase: SupabaseClient): Promise<number> {
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_ACCESS_DAYS;
 }
 
-/**
- * Resolve the bot a buyer should be attached to from the mentor code they
- * carried through checkout.
- *
- * Without this every payer landed on the single instant-activation flagship,
- * because that was the only resolution the webhook had. That holds for one
- * robot; with many mentors selling, it hands every new buyer to the same bot
- * and the mentor who actually sold the sale never sees their client.
- *
- * `mentor_id` is the EA's own unique text code, so it identifies the bot and
- * its distributor in one lookup. An unknown or inactive code resolves to null
- * and the caller falls back — a mistyped code must not lose the payment.
- */
-async function resolveEaByMentorCode(supabase: SupabaseClient, code: string) {
-  const trimmed = code.trim();
-  if (!trimmed) return null;
-
-  const { data, error } = await supabase
-    .from("eas")
-    .select("id, name, mentor_id, distributor_id, is_active")
-    .ilike("mentor_id", trimmed)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[stripe-webhook] mentor code lookup failed:", error);
-    return null;
-  }
-  if (!data) {
-    console.warn("[stripe-webhook] unknown mentor code on session:", trimmed);
-    return null;
-  }
-  if (!data.is_active) {
-    console.warn("[stripe-webhook] mentor code points at an inactive bot:", trimmed);
-    return null;
-  }
-  return data;
-}
-
 /** Optional switch: let a successful payment approve the client outright. */
 async function autoApproveOnPayment(supabase: SupabaseClient): Promise<boolean> {
   const { data } = await supabase
@@ -190,15 +151,10 @@ export async function POST(req: NextRequest) {
 
   const sessionId: string = session.id ?? "";
 
-  // Which mentor this buyer belongs to. Stripe has no idea on its own — one
-  // payment link serves every mentor — so the app appends the mentor's code as
-  // client_reference_id and Stripe hands it back here untouched.
-  //
-  // It used to be read as an email fallback, which was always wrong and would
-  // now be actively harmful: a mentor code would be adopted as the buyer's
-  // email address and the payment recorded against a nonexistent account.
-  const mentorCode: string = (session.client_reference_id ?? "").toString().trim();
-
+  // client_reference_id is deliberately NOT read as an email fallback. It is a
+  // free-text field, so whatever a buyer or link happens to put there would be
+  // adopted as their email address and the payment recorded against an account
+  // that doesn't exist.
   let email: string = (
     session.customer_details?.email ||
     session.customer_email ||
@@ -271,7 +227,7 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from("app_users")
-    .select("id, access_expires_at, status, license_key")
+    .select("id, access_expires_at, status")
     .ilike("email", email)
     .order("created_at", { ascending: true });
 
@@ -296,18 +252,10 @@ export async function POST(req: NextRequest) {
       // taking payment must not leave the account switched off.
       is_active: true,
     };
-    // Issue the licence key here, because nothing else does. Access was being
-    // granted (paid_at, window, is_active, approved) while license_key stayed
-    // null — so a payer landed on the app's licence screen with no key to type
-    // and got "Invalid License". The key had to be minted by hand from the
-    // dashboard, which meant every paid signup silently stalled.
-    //
-    // Only when absent: this runs on renewals too, and rotating a key that is
-    // already on someone's device would lock them out for paying again.
-    if (!row.license_key) {
-      update.license_key = await generateUniqueKey(supabase);
-      update.license_sent_at = now.toISOString();
-    }
+    // No licence key is issued here on purpose. The key carries the bot the
+    // user ends up on, and payment cannot know which mentor that is — one
+    // Stripe link serves all of them. The mentor issues it from the dashboard,
+    // which is what binds the user to their EA.
     if (approve) {
       update.status = "approved";
       update.approved_at = now.toISOString();
@@ -326,15 +274,10 @@ export async function POST(req: NextRequest) {
   // Nobody added this payer yet. Creating the row here means the payment is
   // never silently lost — without it, someone who pays before a mentor adds
   // them has money taken and no record anywhere.
-  // The mentor's own bot when the buyer came through their link; the public
-  // flagship otherwise. Attribution has to happen here — this row is what the
-  // licence key is minted against, and the key is what binds the user to a
-  // mentor for the life of the account.
-  const ea = (await resolveEaByMentorCode(supabase, mentorCode))
-    || (await resolveInstantActivationEA(supabase));
+  const ea = await resolveInstantActivationEA(supabase);
   if (!ea) {
-    console.error("[stripe-webhook] paid but no EA to attach:", email, sessionId, mentorCode || "(no mentor code)");
-    return NextResponse.json({ received: true, error: "no EA to attach" });
+    console.error("[stripe-webhook] paid but no EA to attach:", email, sessionId);
+    return NextResponse.json({ received: true, error: "no instant-activation EA configured" });
   }
 
   const { error: insErr } = await supabase.from("app_users").insert({
@@ -345,8 +288,6 @@ export async function POST(req: NextRequest) {
     stripe_session_id: sessionId || null,
     access_expires_at: expiresAt,
     access_via: "stripe",
-    license_key: await generateUniqueKey(supabase),
-    license_sent_at: now.toISOString(),
     ...(approve
       ? { status: "approved", is_active: true, approved_at: now.toISOString(), approved_by: "stripe:auto" }
       : {}),
