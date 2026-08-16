@@ -105,6 +105,44 @@ async function accessDays(supabase: SupabaseClient): Promise<number> {
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_ACCESS_DAYS;
 }
 
+/**
+ * Resolve the bot a buyer should be attached to from the mentor code they
+ * carried through checkout.
+ *
+ * Without this every payer landed on the single instant-activation flagship,
+ * because that was the only resolution the webhook had. That holds for one
+ * robot; with many mentors selling, it hands every new buyer to the same bot
+ * and the mentor who actually sold the sale never sees their client.
+ *
+ * `mentor_id` is the EA's own unique text code, so it identifies the bot and
+ * its distributor in one lookup. An unknown or inactive code resolves to null
+ * and the caller falls back — a mistyped code must not lose the payment.
+ */
+async function resolveEaByMentorCode(supabase: SupabaseClient, code: string) {
+  const trimmed = code.trim();
+  if (!trimmed) return null;
+
+  const { data, error } = await supabase
+    .from("eas")
+    .select("id, name, mentor_id, distributor_id, is_active")
+    .ilike("mentor_id", trimmed)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[stripe-webhook] mentor code lookup failed:", error);
+    return null;
+  }
+  if (!data) {
+    console.warn("[stripe-webhook] unknown mentor code on session:", trimmed);
+    return null;
+  }
+  if (!data.is_active) {
+    console.warn("[stripe-webhook] mentor code points at an inactive bot:", trimmed);
+    return null;
+  }
+  return data;
+}
+
 /** Optional switch: let a successful payment approve the client outright. */
 async function autoApproveOnPayment(supabase: SupabaseClient): Promise<boolean> {
   const { data } = await supabase
@@ -151,10 +189,19 @@ export async function POST(req: NextRequest) {
   }
 
   const sessionId: string = session.id ?? "";
+
+  // Which mentor this buyer belongs to. Stripe has no idea on its own — one
+  // payment link serves every mentor — so the app appends the mentor's code as
+  // client_reference_id and Stripe hands it back here untouched.
+  //
+  // It used to be read as an email fallback, which was always wrong and would
+  // now be actively harmful: a mentor code would be adopted as the buyer's
+  // email address and the payment recorded against a nonexistent account.
+  const mentorCode: string = (session.client_reference_id ?? "").toString().trim();
+
   let email: string = (
     session.customer_details?.email ||
     session.customer_email ||
-    session.client_reference_id ||
     ""
   ).toString().trim().toLowerCase();
 
@@ -279,10 +326,15 @@ export async function POST(req: NextRequest) {
   // Nobody added this payer yet. Creating the row here means the payment is
   // never silently lost — without it, someone who pays before a mentor adds
   // them has money taken and no record anywhere.
-  const ea = await resolveInstantActivationEA(supabase);
+  // The mentor's own bot when the buyer came through their link; the public
+  // flagship otherwise. Attribution has to happen here — this row is what the
+  // licence key is minted against, and the key is what binds the user to a
+  // mentor for the life of the account.
+  const ea = (await resolveEaByMentorCode(supabase, mentorCode))
+    || (await resolveInstantActivationEA(supabase));
   if (!ea) {
-    console.error("[stripe-webhook] paid but no EA to attach:", email, sessionId);
-    return NextResponse.json({ received: true, error: "no instant-activation EA configured" });
+    console.error("[stripe-webhook] paid but no EA to attach:", email, sessionId, mentorCode || "(no mentor code)");
+    return NextResponse.json({ received: true, error: "no EA to attach" });
   }
 
   const { error: insErr } = await supabase.from("app_users").insert({
