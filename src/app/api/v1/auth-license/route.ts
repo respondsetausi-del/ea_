@@ -28,9 +28,11 @@ export async function OPTIONS() {
  * POST /api/v1/auth-license
  * Body: { email: string, license_key: string }
  *
- * Authenticates an end-user by the per-user license key that was emailed to
- * them. On success returns the EA the distributor created (name + image) and
- * the distributor's branding so the app can render the bot.
+ * Resolves a licence key to the robot it was issued for, and returns that EA
+ * (name + image) plus the distributor's branding so the app can render it.
+ *
+ * `email` is optional and is not matched against anything — the key is the
+ * credential. See the note in the handler.
  */
 export async function POST(req: NextRequest) {
   const supabase = getSupabase();
@@ -45,16 +47,21 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const email = body.email?.trim().toLowerCase();
+  // Email is accepted but no longer required, and never has to match. A licence
+  // identifies a ROBOT, not a person: it is issued against an EA and handed to
+  // whoever the mentor is selling to.
+  //
+  // This used to reject any key whose row carried a different email, which made
+  // valid keys fail constantly — the app sends the address the user signed in
+  // with, while the row carries whatever the mentor typed when generating, and
+  // those are routinely not the same string. Access is gated by email over in
+  // /api/v1/authorize; that is the right place for it. Here the key is the
+  // credential.
   const licenseKey = body.license_key?.trim();
-  if (!email || !email.includes("@")) {
-    return corsJson({ error: "Valid email is required" }, { status: 400 });
-  }
   if (!licenseKey) {
     return corsJson({ error: "License key is required" }, { status: 400 });
   }
 
-  // The license key uniquely identifies one invited user (one email, one EA).
   const { data: appUser, error: userErr } = await supabase
     .from("app_users")
     .select("id, email, ea_id, distributor_id, is_active")
@@ -66,9 +73,8 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Database error" }, { status: 500 });
   }
 
-  // Invalid key, key/email mismatch, or deactivated user → not authorized.
-  if (!appUser || appUser.email.toLowerCase() !== email) {
-    return corsJson({ user_authorized: false, error: "Invalid email or license key" }, { status: 404 });
+  if (!appUser) {
+    return corsJson({ user_authorized: false, error: "That license key was not recognised" }, { status: 404 });
   }
   if (!appUser.is_active) {
     return corsJson({ user_authorized: false, error: "This license has been deactivated" }, { status: 403 });

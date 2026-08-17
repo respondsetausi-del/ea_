@@ -51,16 +51,19 @@ export default function LicensesPage() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!form.email.trim()) { setError("Enter the user's email."); return; }
     if (!form.ea_id) { setError("Select an EA."); return; }
     setGenerating(true);
     setResult(null);
 
-    const email = form.email.trim().toLowerCase();
+    // Email is optional. A licence is issued against a BOT, not a person — the
+    // mentor may not know who is buying it yet, and requiring an address here
+    // forced them to invent one, which then had to match at activation and
+    // usually didn't.
+    const email = form.email.trim().toLowerCase() || null;
 
     if (DEV_MODE) {
       await new Promise(r => setTimeout(r, 400));
-      setResult({ key: makeKey(), email });
+      setResult({ key: makeKey(), email: email || "" });
       setGenerating(false);
       return;
     }
@@ -68,10 +71,13 @@ export default function LicensesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setGenerating(false); return; }
 
-    // Save the user (so they show in the Users tab) with the key stored on the row.
-    // If they already exist for this EA, we regenerate their key in place.
-    const { data: existing } = await supabase.from("app_users")
-      .select("id").eq("distributor_id", user.id).eq("ea_id", form.ea_id).eq("email", email).maybeSingle();
+    // Reuse the row when this mentor already has this address on this EA, so a
+    // named client keeps one row. With no email there is nobody to match, so
+    // every generate mints a fresh unattached licence.
+    const { data: existing } = email
+      ? await supabase.from("app_users")
+          .select("id").eq("distributor_id", user.id).eq("ea_id", form.ea_id).eq("email", email).maybeSingle()
+      : { data: null };
 
     let key = "";
     let lastErr: string | null = null;
@@ -92,7 +98,7 @@ export default function LicensesPage() {
       setError(/duplicate/i.test(lastErr) ? "That user already has a key for this EA." : lastErr);
       return;
     }
-    setResult({ key, email });
+    setResult({ key, email: email || "" });
   };
 
   const cancel = () => {
@@ -118,13 +124,13 @@ export default function LicensesPage() {
       <form onSubmit={handleGenerate} className="rounded-2xl p-5 space-y-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>USER EMAIL</label>
+            <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>USER EMAIL (OPTIONAL)</label>
             <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
               style={{ background: INPUT_BG, border: `1px solid ${BORDER}` }}
               onFocus={e => e.target.style.borderColor = "rgba(10,132,255,0.4)"}
               onBlur={e => e.target.style.borderColor = BORDER}
-              placeholder="user@example.com" required />
+              placeholder="Leave blank for an unassigned licence" />
           </div>
           <div>
             <label className="text-[10px] font-bold tracking-widest block mb-2" style={{ color: MUTED }}>EA</label>

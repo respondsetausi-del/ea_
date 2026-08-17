@@ -95,8 +95,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not save license" }, { status: 500 });
   }
 
+  // A licence can be issued with no email on it at all — it belongs to a bot,
+  // not a person — in which case there is nowhere to send it and the mentor
+  // passes the key on themselves.
   const { subject, htmlContent } = licenseEmail(branding?.app_name || "EA NAPTUNE", licenseKey);
-  const result = await sendEmail({ to: appUser.email, subject, htmlContent });
+  const result = appUser.email
+    ? await sendEmail({ to: appUser.email, subject, htmlContent })
+    : { sent: false, skipped: true, error: null as string | null };
 
   // Return the key to whoever is entitled to hand it over.
   //
