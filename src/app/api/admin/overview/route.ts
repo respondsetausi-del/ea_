@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
   const eventsSince = new Date(Date.now() - 31 * 86_400_000).toISOString();
   const [{ data: distributors }, { data: eas }, { data: appUsers }, { data: adminEmails }, { data: mt5Conns }, { data: events }] = await Promise.all([
     supabase.from("distributors")
-      .select("id, email, name, verified, onboarded, is_super_admin, is_staff_admin, is_active, created_at")
+      .select("id, email, name, verified, onboarded, is_super_admin, is_staff_admin, is_active, created_at, telegram_url, discord_url, youtube_url, tiktok_url")
       .order("created_at", { ascending: false }),
     supabase.from("eas").select("id, distributor_id, name, mentor_id, is_active"),
     supabase.from("app_users")
@@ -136,7 +136,31 @@ export async function GET(req: NextRequest) {
     eaCount: easList.filter(e => e.distributor_id === d.id).length,
     userCount: usersList.filter(u => u.distributor_id === d.id).length,
     licensesSent: usersList.filter(u => u.distributor_id === d.id && u.license_sent_at).length,
+    // Paying clients under this mentor — the number that actually says whether
+    // approving them was worth it.
+    paidUserCount: usersList.filter(u => u.distributor_id === d.id && approvalById.get(u.id)?.paid_at).length,
+    // Where their audience is. Collected at signup; this is what the super
+    // admin reviews the application on.
+    socials: {
+      telegram: d.telegram_url || null,
+      discord: d.discord_url || null,
+      youtube: d.youtube_url || null,
+      tiktok: d.tiktok_url || null,
+    },
   }));
+
+  // MT5 sessions seen in the last 10 minutes. The heartbeat runs every few
+  // minutes, so anything older is a session that has stopped rather than one
+  // that is quiet.
+  const LIVE_WINDOW_MS = 10 * 60_000;
+  const liveEmails = new Set(
+    (mt5Conns || [])
+      .filter(c => c.status === "connected"
+        && c.last_heartbeat_at
+        && Date.now() - new Date(c.last_heartbeat_at as string).getTime() < LIVE_WINDOW_MS)
+      .map(c => (c.email || "").toLowerCase())
+      .filter(Boolean),
+  );
 
   const appUserRows = usersList.map(u => ({
     id: u.id,
@@ -159,6 +183,10 @@ export async function GET(req: NextRequest) {
     // so a null firstLoginAt means the client has never actually got in.
     firstLoginAt: approvalById.get(u.id)?.first_login_at || null,
     lastSeen: (u.last_seen as string) || null,
+    // Is their robot actually trading right now? A licence being issued says
+    // nothing about that — this is the MT5 session the app server reports,
+    // matched on the address the client connected with.
+    running: liveEmails.has((u.email || "").toLowerCase()),
   }));
 
   // Requests awaiting a decision, newest first — the super admin's inbox.

@@ -10,11 +10,22 @@ import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
 
+const SOCIALS = [
+  { key: "telegram" as const, label: "Telegram", placeholder: "Telegram — https://t.me/yourchannel" },
+  { key: "discord" as const, label: "Discord", placeholder: "Discord — https://discord.gg/invite" },
+  { key: "youtube" as const, label: "YouTube", placeholder: "YouTube — https://youtube.com/@you" },
+  { key: "tiktok" as const, label: "TikTok", placeholder: "TikTok — https://tiktok.com/@you" },
+];
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // A mentor's reach is what the super admin is actually judging when the
+  // application is reviewed, so it is collected here rather than chased up
+  // afterwards. All optional individually — plenty of mentors run one channel.
+  const [socials, setSocials] = useState({ telegram: "", discord: "", youtube: "", tiktok: "" });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +38,15 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: {
+          name,
+          telegram_url: socials.telegram.trim(),
+          discord_url: socials.discord.trim(),
+          youtube_url: socials.youtube.trim(),
+          tiktok_url: socials.tiktok.trim(),
+        },
+      },
     });
 
     if (error) {
@@ -207,6 +226,47 @@ export default function RegisterPage() {
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+
+            {/* Social reach. The super admin reviews this to decide the
+                application, so it is asked for once, here. */}
+            <div className="pt-1">
+              <label
+                className="text-[10px] font-bold tracking-widest block mb-2"
+                style={{ color: "#8B949E" }}
+              >
+                WHERE IS YOUR AUDIENCE?
+              </label>
+              <div className="space-y-2.5">
+                {SOCIALS.map(({ key, label, placeholder }) => (
+                  <input
+                    key={key}
+                    type="url"
+                    inputMode="url"
+                    value={socials[key]}
+                    onChange={(e) =>
+                      setSocials((s) => ({ ...s, [key]: e.target.value }))
+                    }
+                    className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition"
+                    style={{
+                      background: "rgba(13,17,23,0.8)",
+                      border: "1px solid rgba(10,132,255,0.1)",
+                    }}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = "rgba(10,132,255,0.4)")
+                    }
+                    onBlur={(e) =>
+                      (e.target.style.borderColor = "rgba(10,132,255,0.1)")
+                    }
+                    placeholder={placeholder}
+                    aria-label={label}
+                  />
+                ))}
+              </div>
+              <p className="text-[10px] mt-2" style={{ color: "#6E7681" }}>
+                Add whichever you use — all optional. Your application is
+                reviewed within 24 hours, and you can sign in once approved.
+              </p>
             </div>
 
             {error && (

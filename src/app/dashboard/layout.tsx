@@ -6,7 +6,7 @@ import { supabase, DEV_MODE, DEV_USER } from "@/lib/supabase";
 import { isSuperAdminNow } from "@/lib/admin-client";
 import { REQUIRE_VERIFICATION } from "@/lib/config";
 import Link from "next/link";
-import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, UserCircle } from "lucide-react";
+import { LayoutDashboard, Bot, Users, KeyRound, Crown, LogOut, Menu, X, UserCircle, GraduationCap, UsersRound } from "lucide-react";
 import Logo from "@/components/Logo";
 
 const ACCENT = "#0A84FF";
@@ -25,7 +25,15 @@ const NAV_MANAGE = [
   { href: "/dashboard/branding", label: "Account", icon: UserCircle },
 ];
 
-const ADMIN_NAV = { href: "/dashboard/admin", label: "Super Admin", icon: Crown };
+// Admin sections. Mentors and Members are their own pages rather than more
+// panels bolted onto Super Admin — that page is the technical surface (Stripe
+// events, MQTT, secrets) and the day-to-day work of reviewing mentors and
+// looking up a client does not belong buried underneath it.
+const ADMIN_NAV = [
+  { href: "/dashboard/admin/mentors", label: "Mentors", icon: GraduationCap },
+  { href: "/dashboard/admin/members", label: "Members", icon: UsersRound },
+  { href: "/dashboard/admin", label: "Super Admin", icon: Crown },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -153,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div>
               <p className="px-3 mb-2 text-[9px] font-bold tracking-[0.15em] uppercase" style={{ color: "rgba(139,148,158,0.5)" }}>Admin</p>
               <div className="space-y-0.5">
-                <NavItem {...ADMIN_NAV} isAdmin />
+                {ADMIN_NAV.map(item => <NavItem key={item.href} {...item} isAdmin />)}
               </div>
             </div>
           )}
@@ -186,7 +194,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu size={20} />
           </button>
           <h1 className="text-sm font-bold tracking-wide" style={{ color: MUTED }}>
-            {[...NAV_MAIN, ...NAV_MANAGE, ADMIN_NAV].find(n => n.href === pathname)?.label || "Dashboard"}
+            {[...NAV_MAIN, ...NAV_MANAGE, ...ADMIN_NAV].find(n => n.href === pathname)?.label || "Dashboard"}
           </h1>
         </header>
         <div className="flex-1 p-4 sm:p-6 overflow-auto">
