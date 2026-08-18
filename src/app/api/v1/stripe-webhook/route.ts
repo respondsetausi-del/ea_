@@ -111,6 +111,73 @@ async function autoApproveOnPayment(supabase: SupabaseClient): Promise<boolean> 
   return data?.value === true;
 }
 
+/**
+ * The EA NAPTUNE products, by Stripe product id.
+ *
+ * Override with STRIPE_PRODUCT_IDS (comma-separated) if the catalogue changes;
+ * these are the defaults so the check works without extra configuration.
+ *   prod_Ux88p0twOuYeZl  "EA NAPTUNE"              ($39.17 and R550 prices)
+ *   prod_V461TpAdcTSQJW  "EA NAPTUNE - App Access" (R550)
+ */
+function ourProductIds(): string[] {
+  const raw = process.env.STRIPE_PRODUCT_IDS;
+  const list = (raw ? raw.split(",") : ["prod_Ux88p0twOuYeZl", "prod_V461TpAdcTSQJW"])
+    .map(v => v.trim())
+    .filter(Boolean);
+  return list;
+}
+
+/**
+ * Did this checkout actually buy EA NAPTUNE?
+ *
+ * A Stripe webhook endpoint receives events for the whole ACCOUNT, not for one
+ * product. This account sells Trade Port, EA Migrate, Meta Host, EA Nexus, EA
+ * Core and more through the same Stripe account, and this endpoint was granting
+ * a 30-day EA NAPTUNE window on every one of them — 150 checkouts in six days,
+ * of which exactly one was for this app. Buyers of other products were being
+ * handed free accounts, and the paid-user count for this app was meaningless.
+ *
+ * Payment Link events do not carry line items inline, so they have to be
+ * fetched. Returns null when that cannot be determined, which the caller treats
+ * as "retry" rather than "grant" — guessing in either direction is worse than
+ * letting Stripe deliver again.
+ */
+async function sessionBuysOurProduct(sessionId: string): Promise<boolean | null> {
+  const allowed = ourProductIds();
+  if (allowed.length === 0) {
+    console.warn("[stripe-webhook] STRIPE_PRODUCT_IDS empty - product check disabled");
+    return true;
+  }
+
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || !sessionId) {
+    console.error("[stripe-webhook] cannot verify product: STRIPE_SECRET_KEY not set");
+    return null;
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}/line_items?limit=100&expand[]=data.price.product`,
+      { headers: { Authorization: `Bearer ${key}` } },
+    );
+    if (!res.ok) {
+      console.error("[stripe-webhook] line_items fetch failed:", res.status);
+      return null;
+    }
+    const body: any = await res.json();
+    const items: any[] = Array.isArray(body?.data) ? body.data : [];
+    // `product` is an object once expanded, a bare id otherwise.
+    return items.some(it => {
+      const prod = it?.price?.product;
+      const id = typeof prod === "string" ? prod : prod?.id;
+      return id ? allowed.includes(id) : false;
+    });
+  } catch (e: any) {
+    console.error("[stripe-webhook] line_items error:", e?.message || e);
+    return null;
+  }
+}
+
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -150,6 +217,19 @@ export async function POST(req: NextRequest) {
   }
 
   const sessionId: string = session.id ?? "";
+
+  // Is this even ours? Checked before anything is recorded or granted, and
+  // before the event id is claimed, so that a retry after a transient failure
+  // is not swallowed as a duplicate.
+  const isOurs = await sessionBuysOurProduct(sessionId);
+  if (isOurs === null) {
+    // 500 -> Stripe redelivers. Better than granting on a guess, and better
+    // than silently dropping a real payment.
+    return NextResponse.json({ error: "Could not verify product" }, { status: 500 });
+  }
+  if (!isOurs) {
+    return NextResponse.json({ received: true, ignored: "not an EA NAPTUNE product" });
+  }
 
   // client_reference_id is deliberately NOT read as an email fallback. It is a
   // free-text field, so whatever a buyer or link happens to put there would be
