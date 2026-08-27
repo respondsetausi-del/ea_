@@ -189,6 +189,9 @@ export async function GET(req: NextRequest) {
     running: liveEmails.has((u.email || "").toLowerCase()),
   }));
 
+  /** When this user actually paid, or null. The honest signal for revenue. */
+  const paidAtOf = (id: string): string | null => approvalById.get(id)?.paid_at || null;
+
   // Requests awaiting a decision, newest first — the super admin's inbox.
   const pendingRequests = appUserRows
     .filter(u => u.status === "pending")
@@ -286,12 +289,20 @@ export async function GET(req: NextRequest) {
       active30d: countSince(mt5Conns || [], c => c.last_connected_at as string, monthAgo),
     },
     traffic: buildTraffic(events || [], startOfToday, weekAgo, monthAgo),
+    // Counted on paid_at, which the Stripe webhook stamps when money clears.
+    //
+    // These compared access_via to the string "payment", but the webhook writes
+    // "stripe" — only the older register route ever wrote "payment". So every
+    // Stripe customer was counted as non-paying and the paid tiles read zero
+    // while real money was arriving. Dating them from paid_at rather than
+    // created_at also means "paid this week" describes the payment, not when
+    // the row happened to be created.
     payments: {
-      paid: usersList.filter(u => accessVia(u.id) === "payment").length,
-      nonPaying: usersList.filter(u => accessVia(u.id) !== "payment").length,
-      paidToday: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= startOfToday).length,
-      paidWeek: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= weekAgo).length,
-      paidMonth: usersList.filter(u => accessVia(u.id) === "payment" && new Date(u.created_at as string).getTime() >= monthAgo).length,
+      paid: usersList.filter(u => paidAtOf(u.id)).length,
+      nonPaying: usersList.filter(u => !paidAtOf(u.id)).length,
+      paidToday: countSince(usersList, u => paidAtOf(String(u.id)) as string, startOfToday),
+      paidWeek: countSince(usersList, u => paidAtOf(String(u.id)) as string, weekAgo),
+      paidMonth: countSince(usersList, u => paidAtOf(String(u.id)) as string, monthAgo),
     },
   };
 
