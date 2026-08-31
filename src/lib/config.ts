@@ -19,8 +19,15 @@ export function signupMode(): SignupMode {
   return "open";
 }
 
-export const APPROVAL_MODE = signupMode() === "approval";
+// Approval is a rule about who may sell on this platform, not a deployment
+// setting. These were derived from NEXT_PUBLIC_SIGNUP_MODE, which defaults to
+// "open" and is not set on the deployment — so every gate that read them was
+// switched off in production and anyone who registered could sign in at once.
+// The pending queue never held a single person.
+//
+// Hard-coded rather than defaulted, so no missing environment variable can
+// quietly reopen the door. signupMode() is left in place for anything that
+// still wants to know which flavour was configured.
+export const APPROVAL_MODE = true;
+export const REQUIRE_VERIFICATION = true;
 
-// When false, the verified/approval gate is skipped entirely — users sign in
-// right after registering. Only "approval" and "email" modes require it.
-export const REQUIRE_VERIFICATION = signupMode() !== "open";
