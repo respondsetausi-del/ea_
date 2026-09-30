@@ -134,10 +134,13 @@ export default function UsersPage() {
    * this twice can't strand a user who is already activated.
    */
   const sendLicense = async (u: AppUser & { ea_name?: string }) => {
+    // A licence with no email belongs to a bot, not a person; saying "null"
+    // here is how a template leaks a JavaScript value to the user.
+    const who = u.email || "this unassigned licence";
     if (!confirm(
       u.license_key
-        ? `Resend ${u.email} their existing licence key?`
-        : `Issue ${u.email} a licence key?`,
+        ? `Resend the existing licence key for ${who}?`
+        : `Issue a licence key for ${who}?`,
     )) return;
 
     setSendingTo(u.id);
@@ -163,10 +166,10 @@ export default function UsersPage() {
     const key = payload?.license_key as string | undefined;
     setNotice(
       payload?.emailSent
-        ? `Licence emailed to ${u.email}.${key ? ` Key: ${key}` : ""}`
+        ? `Licence emailed to ${who}.${key ? ` Key: ${key}` : ""}`
       : key
-        ? `Email is not configured, so nothing was sent. Give ${u.email} this key: ${key}`
-        : `Key generated for ${u.email}, but email is not configured — it was not sent.`,
+        ? `No email on this licence, so nothing was sent. The key is: ${key}`
+        : `Key generated for ${who}, but email is not configured — it was not sent.`,
     );
     load();
   };
@@ -255,10 +258,15 @@ export default function UsersPage() {
                 className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                 style={{ background: u.is_active ? "rgba(10,132,255,0.1)" : "rgba(255,255,255,0.05)", color: u.is_active ? ACCENT : MUTED }}
               >
-                {u.email.charAt(0).toUpperCase()}
+                {/* A licence issued without an email has none to take an
+                    initial from — that is the normal unassigned case, not a
+                    fault, and it must not take the page down. */}
+                {u.email ? u.email.charAt(0).toUpperCase() : "—"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{u.email}</p>
+                <p className="text-sm font-semibold text-white truncate">
+                  {u.email || <span style={{ color: MUTED }}>Unassigned licence</span>}
+                </p>
                 <p className="text-[10px]" style={{ color: MUTED }}>
                   {u.ea_name || (u.ea_id ? "Unknown EA" : "No bot assigned")} · Joined {new Date(u.created_at).toLocaleDateString()}
                   {u.license_key ? " · licence sent" : " · no licence yet"}

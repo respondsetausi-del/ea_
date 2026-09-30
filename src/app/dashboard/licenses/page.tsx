@@ -165,7 +165,7 @@ export default function LicensesPage() {
 
       {result && (
         <div className="rounded-2xl p-6" style={{ background: CARD, border: "1px solid rgba(10,132,255,0.25)", boxShadow: "0 4px 24px rgba(10,132,255,0.08)" }}>
-          <p className="text-[10px] font-bold tracking-widest mb-3" style={{ color: MUTED }}>LICENSE KEY FOR {result.email.toUpperCase()}</p>
+          <p className="text-[10px] font-bold tracking-widest mb-3" style={{ color: MUTED }}>{result.email ? `LICENSE KEY FOR ${result.email.toUpperCase()}` : "LICENSE KEY — UNASSIGNED"}</p>
           <div className="flex items-center gap-3 flex-wrap">
             <code className="text-lg font-mono font-bold px-4 py-3 rounded-xl tracking-wider" style={{ background: "rgba(10,132,255,0.08)", color: ACCENT, border: `1px solid ${BORDER}` }}>
               {result.key}
