@@ -102,24 +102,19 @@ export default function Home() {
             <Smartphone size={18} />
             iOS Version
           </a>
-          <div
-            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border cursor-not-allowed opacity-60 select-none"
+          <a
+            href="/downloads/ea-naptune.apk"
+            download
+            className="flex items-center gap-2 px-6 py-3.5 rounded-[14px] text-[15px] font-bold border transition-colors"
             style={{
               color: ACCENT,
               borderColor: "rgba(10,132,255,0.3)",
               background: "rgba(10,132,255,0.06)",
             }}
-            title="Coming soon"
           >
             <Download size={18} />
-            Android (APK)
-            <span
-              className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wide"
-              style={{ background: "rgba(10,132,255,0.15)", color: ACCENT }}
-            >
-              COMING SOON
-            </span>
-          </div>
+            Android Version
+          </a>
         </div>
       </section>
 
