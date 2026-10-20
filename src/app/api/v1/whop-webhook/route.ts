@@ -60,7 +60,7 @@ function getSupabase() {
 function verifySignature(
   rawBody: string,
   headers: { id: string | null; timestamp: string | null; signature: string | null },
-  secret: string,
+  secrets: string[],
 ): { ok: boolean; reason?: string } {
   const { id, timestamp, signature } = headers;
   if (!id || !timestamp || !signature) {
@@ -74,15 +74,18 @@ function verifySignature(
   }
 
   const signed = `${id}.${timestamp}.${rawBody}`;
-  const keys: Buffer[] = [Buffer.from(secret, "utf8")];
-  const bare = secret.replace(/^ws_/, "");
-  if (bare !== secret) {
-    keys.push(Buffer.from(bare, "utf8"));
-    try {
-      const decoded = Buffer.from(bare, "base64");
-      if (decoded.length > 0) keys.push(decoded);
-    } catch {
-      /* not base64 - the utf8 candidates stand */
+  const keys: Buffer[] = [];
+  for (const secret of secrets) {
+    keys.push(Buffer.from(secret, "utf8"));
+    const bare = secret.replace(/^ws_/, "");
+    if (bare !== secret) {
+      keys.push(Buffer.from(bare, "utf8"));
+      try {
+        const decoded = Buffer.from(bare, "base64");
+        if (decoded.length > 0) keys.push(decoded);
+      } catch {
+        /* not base64 - the utf8 candidates stand */
+      }
     }
   }
 
@@ -166,8 +169,17 @@ async function releaseClaim(supabase: SupabaseClient, eventId: string): Promise<
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.WHOP_WEBHOOK_SECRET;
-  if (!secret) {
+  // Comma-separated, so two businesses can be live at once. Moving a product
+  // to a new Whop business means a second webhook with its own ws_ secret, and
+  // for the days either side of the switch BOTH must verify: the old one still
+  // has in-flight sales and retries, the new one is taking the next ones. A
+  // single-value secret would have forced a cutover with a hole in it, and the
+  // deliveries that fell in the hole are payments.
+  const secrets = (process.env.WHOP_WEBHOOK_SECRET || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if (secrets.length === 0) {
     // Dormant until configured, and never falling through to a grant: a check
     // that cannot run is a check that did not pass.
     console.error("[whop-webhook] WHOP_WEBHOOK_SECRET not set - refusing");
@@ -179,7 +191,7 @@ export async function POST(request: NextRequest) {
     id: request.headers.get("webhook-id"),
     timestamp: request.headers.get("webhook-timestamp"),
     signature: request.headers.get("webhook-signature"),
-  }, secret);
+  }, secrets);
   if (!verified.ok) {
     console.error("[whop-webhook] rejected:", verified.reason);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
