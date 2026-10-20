@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "crypto";
-import { resolveInstantActivationEA } from "@/lib/instant-activation";
+import { resolveInstantActivationEA, INSTANT_ACTIVATION_EA_NAME } from "@/lib/instant-activation";
 
 /**
  * POST /api/v1/whop-webhook
@@ -60,7 +60,7 @@ function getSupabase() {
 function verifySignature(
   rawBody: string,
   headers: { id: string | null; timestamp: string | null; signature: string | null },
-  secret: string,
+  secrets: string[],
 ): { ok: boolean; reason?: string } {
   const { id, timestamp, signature } = headers;
   if (!id || !timestamp || !signature) {
@@ -74,15 +74,18 @@ function verifySignature(
   }
 
   const signed = `${id}.${timestamp}.${rawBody}`;
-  const keys: Buffer[] = [Buffer.from(secret, "utf8")];
-  const bare = secret.replace(/^ws_/, "");
-  if (bare !== secret) {
-    keys.push(Buffer.from(bare, "utf8"));
-    try {
-      const decoded = Buffer.from(bare, "base64");
-      if (decoded.length > 0) keys.push(decoded);
-    } catch {
-      /* not base64 - the utf8 candidates stand */
+  const keys: Buffer[] = [];
+  for (const secret of secrets) {
+    keys.push(Buffer.from(secret, "utf8"));
+    const bare = secret.replace(/^ws_/, "");
+    if (bare !== secret) {
+      keys.push(Buffer.from(bare, "utf8"));
+      try {
+        const decoded = Buffer.from(bare, "base64");
+        if (decoded.length > 0) keys.push(decoded);
+      } catch {
+        /* not base64 - the utf8 candidates stand */
+      }
     }
   }
 
@@ -149,9 +152,34 @@ function pick(obj: unknown, paths: string[]): string {
   return "";
 }
 
+/**
+ * Give the delivery id back so a retry can be acted on.
+ *
+ * The claim is staked before the grant, which is what stops two concurrent
+ * deliveries both granting. The cost is that a grant which then FAILS leaves
+ * the id claimed, so Whop's retry matches the duplicate check and returns
+ * "already handled" without ever granting -- the payment is lost for good, and
+ * the louder the original failure the more certain the loss. Releasing the
+ * claim on every failure path is what makes a retry mean anything.
+ */
+async function releaseClaim(supabase: SupabaseClient, eventId: string): Promise<void> {
+  if (!eventId) return;
+  const { error } = await supabase.from("whop_events").delete().eq("event_id", eventId);
+  if (error) console.error("[whop-webhook] could not release claim", eventId, error);
+}
+
 export async function POST(request: NextRequest) {
-  const secret = process.env.WHOP_WEBHOOK_SECRET;
-  if (!secret) {
+  // Comma-separated, so two businesses can be live at once. Moving a product
+  // to a new Whop business means a second webhook with its own ws_ secret, and
+  // for the days either side of the switch BOTH must verify: the old one still
+  // has in-flight sales and retries, the new one is taking the next ones. A
+  // single-value secret would have forced a cutover with a hole in it, and the
+  // deliveries that fell in the hole are payments.
+  const secrets = (process.env.WHOP_WEBHOOK_SECRET || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if (secrets.length === 0) {
     // Dormant until configured, and never falling through to a grant: a check
     // that cannot run is a check that did not pass.
     console.error("[whop-webhook] WHOP_WEBHOOK_SECRET not set - refusing");
@@ -163,7 +191,7 @@ export async function POST(request: NextRequest) {
     id: request.headers.get("webhook-id"),
     timestamp: request.headers.get("webhook-timestamp"),
     signature: request.headers.get("webhook-signature"),
-  }, secret);
+  }, secrets);
   if (!verified.ok) {
     console.error("[whop-webhook] rejected:", verified.reason);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -262,6 +290,7 @@ export async function POST(request: NextRequest) {
       .in("id", mine.map((r) => r.id));
     if (error) {
       console.error("[whop-webhook] revoke failed:", error);
+      await releaseClaim(supabase, eventId);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
     console.log("[whop-webhook] access ended for", email, membershipId);
@@ -306,6 +335,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.from("app_users").update(update).eq("id", row.id);
     if (error) {
       console.error("[whop-webhook] update failed:", error);
+      await releaseClaim(supabase, eventId);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
     console.log("[whop-webhook] extended", email, "to", update.access_expires_at);
@@ -317,8 +347,24 @@ export async function POST(request: NextRequest) {
   // with no record anywhere.
   const ea = await resolveInstantActivationEA(supabase);
   if (!ea) {
-    console.error("[whop-webhook] paid but no EA to attach:", email, membershipId);
-    return NextResponse.json({ received: true, error: "no instant-activation EA configured" });
+    // This returned 200 with an error string in the body, which told Whop the
+    // delivery was handled. Four people paid, the delivery was recorded, no
+    // account was ever created, nothing retried, and the only trace was a log
+    // line nobody reads. They sat locked out until someone complained.
+    //
+    // 500 now, with the claim released, so Whop keeps retrying and the moment
+    // an EA is configured the backlog lands by itself. A payment we cannot act
+    // on must stay visibly unfinished, not be marked done.
+    console.error(
+      "[whop-webhook] PAID BUT NO ACCESS GRANTED:", email, membershipId,
+      "- no EA has is_instant_activation = true, none is named",
+      `"${INSTANT_ACTIVATION_EA_NAME}", and INSTANT_ACTIVATION_MENTOR_ID is unset.`,
+    );
+    await releaseClaim(supabase, eventId);
+    return NextResponse.json(
+      { error: "No instant-activation EA configured - cannot grant access" },
+      { status: 500 },
+    );
   }
 
   const { error: insErr } = await supabase.from("app_users").insert({
@@ -335,6 +381,7 @@ export async function POST(request: NextRequest) {
   });
   if (insErr) {
     console.error("[whop-webhook] insert failed:", insErr);
+    await releaseClaim(supabase, eventId);
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 
