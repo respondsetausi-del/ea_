@@ -10,10 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
  *
  * Two things are deliberately still served while suspended:
  *
- *   /api/v1/stripe-webhook — Stripe retries for three days and then gives up.
- *     Blocking it would mean a payment that cleared is never recorded, and the
+ *   the payment webhooks — a provider retries for a while and then gives up.
+ *     Blocking one would mean a payment that cleared is never recorded, and the
  *     customer is owed access nobody can see. Suspension should stop people
  *     using the service, not lose their money.
+ *
+ *     This list is the thing to remember when a payment provider is added.
+ *     Whop became the live gateway six weeks after this file was written and
+ *     was not added here, so a suspension would have taken money and recorded
+ *     nothing — the exact failure the Stripe line above exists to prevent.
  *
  *   /_next/* and favicons — so the page itself renders rather than 404ing on
  *     its own assets.
@@ -25,6 +30,7 @@ function suspended(): boolean {
 
 const ALWAYS_ALLOWED = [
   "/api/v1/stripe-webhook",
+  "/api/v1/whop-webhook",
 ];
 
 const PAGE = `<!doctype html>
