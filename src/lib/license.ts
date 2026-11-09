@@ -1,4 +1,4 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { Db as SupabaseClient } from "@/lib/pg";
 import { randomBytes } from "crypto";
 
 // Unambiguous alphabet (no 0/O/1/I) → easier for users to type.

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, staffCanPerform, superAdminEmails, isOwnerEmail, SUPER_ADMIN_UPDATE } from "@/lib/admin";
 import { sendEmail, accessGrantedEmail } from "@/lib/brevo";
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { Db as SupabaseClient } from "@/lib/pg";
 
 export const dynamic = "force-dynamic";
 
