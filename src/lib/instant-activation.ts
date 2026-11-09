@@ -1,4 +1,4 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { Db as SupabaseClient } from "@/lib/pg";
 import { isOwnerEmail, isSuperAdminEmail } from "./admin";
 
 /**

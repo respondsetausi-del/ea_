@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/pg";
 import { sendEmail, licenseEmail } from "@/lib/brevo";
 import { resolveCaller } from "@/lib/admin";
 import { generateUniqueKey } from "@/lib/license";
 
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = (process.env.DATABASE_URL ? "configured" : "");
+  const key = (process.env.AUTH_SECRET ? "configured" : "");
   if (!url || !key) return null;
   return createClient(url, key);
 }

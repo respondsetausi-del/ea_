@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { Db as SupabaseClient } from "@/lib/pg";
 import { resolveCaller } from "@/lib/admin";
 
 /**
