@@ -11,14 +11,20 @@ function siteOrigin(req: NextRequest): string {
 }
 
 type Body = {
-  type?: "distributor" | "app_user" | "admin" | "ea" | "settings";
+  type?: "distributor" | "app_user" | "admin" | "ea" | "settings" | "renew";
   id?: string;
   action?: string;
   email?: string;
   value?: boolean;
   /** extendAccess: length of the new window; defaults to app_settings.access_days. */
   days?: number;
+  /** renew byEmail: the clients whose renewal payment came in. */
+  emails?: unknown[];
 };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** An exact, case-insensitive match for ilike: its % and _ wildcards escaped. */
+const ilikeExact = (s: string) => s.replace(/[\\%_]/g, (c) => "\\" + c);
 
 /** How many days an approval grants. Configurable without a deploy. */
 const DEFAULT_ACCESS_DAYS = 30;
@@ -117,6 +123,39 @@ export async function POST(req: NextRequest) {
     }, { onConflict: "key" });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, requirePayment: body.value === true });
+  }
+
+  // ── Renew by email, after a client's renewal payment. Every licence under each
+  //    email gets another window, counted from the later of now and its current
+  //    end, so renewing early adds time instead of losing what is left.
+  if (type === "renew" && action === "byEmail") {
+    const emails = [...new Set((Array.isArray(body.emails) ? body.emails : [])
+      .map((e) => String(e ?? "").trim().toLowerCase())
+      .filter(Boolean))].slice(0, 100);
+    if (!emails.length) return NextResponse.json({ error: "Add at least one email." }, { status: 400 });
+    const days = Number(body?.days) > 0 ? Math.min(Number(body.days), 366) : await accessDays(supabase);
+
+    const results: { email: string; renewed: number; until?: string; error?: string }[] = [];
+    for (const email of emails) {
+      if (!EMAIL_RE.test(email)) { results.push({ email, renewed: 0, error: "not a valid email" }); continue; }
+      const { data: rows, error } = await supabase
+        .from("app_users").select("id, access_expires_at").ilike("email", ilikeExact(email));
+      if (error) { results.push({ email, renewed: 0, error: "could not read" }); continue; }
+      if (!rows?.length) { results.push({ email, renewed: 0, error: "no client with this email" }); continue; }
+      let renewed = 0;
+      let until = "";
+      for (const row of rows) {
+        const base = row.access_expires_at ? Math.max(Date.now(), new Date(row.access_expires_at).getTime()) : Date.now();
+        const expiresAt = new Date(base + days * 86_400_000).toISOString();
+        const { error: upErr } = await supabase.from("app_users")
+          .update({ access_expires_at: expiresAt, is_active: true, status: "approved" })
+          .eq("id", row.id);
+        if (!upErr) { renewed++; if (expiresAt > until) until = expiresAt; }
+      }
+      results.push(renewed ? { email, renewed, until } : { email, renewed: 0, error: "could not save" });
+    }
+    console.log(`[admin] renew by email: ${results.filter((r) => r.renewed).length}/${emails.length} renewed by ${gate.user.email}`);
+    return NextResponse.json({ ok: true, days, results });
   }
 
   if (!type || !id || !action) {

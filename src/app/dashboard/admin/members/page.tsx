@@ -66,6 +66,78 @@ const DEMO: Member[] = [
   },
 ];
 
+type RenewResult = { email: string; renewed: number; until?: string; error?: string };
+
+/** After a renewal payment: paste the clients' emails and give each another window. */
+function RenewByEmail({ onDone }: { onDone: () => Promise<void> }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [results, setResults] = useState<RenewResult[] | null>(null);
+  const [error, setError] = useState("");
+
+  const emails = text.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+
+  const renew = async () => {
+    if (!emails.length) return;
+    if (!confirm(`Renew access for ${emails.length} email${emails.length === 1 ? "" : "s"}?`)) return;
+    setBusy(true);
+    setError("");
+    setResults(null);
+    try {
+      const res = await fetch("/api/admin/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ type: "renew", action: "byEmail", emails }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) setError(j.error || "Could not renew.");
+      else { setResults(j.results || []); setText(""); await onDone(); }
+    } catch {
+      setError("Network error. Try again.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="rounded-2xl p-4 space-y-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+      <div>
+        <p className="text-sm font-bold text-white">Renew by email</p>
+        <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>
+          After a renewal payment. Paste one or more client emails. Each gets another 30 days, added after any time they still have.
+        </p>
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        placeholder="client@example.com, another@example.com"
+        className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none"
+        style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}` }}
+      />
+      <button
+        onClick={renew}
+        disabled={busy || emails.length === 0}
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition disabled:opacity-40"
+        style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}
+      >
+        <Check size={13} /> {busy ? "Renewing…" : `Renew ${emails.length || ""}`.trim()}
+      </button>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      {results && (
+        <ul className="space-y-1">
+          {results.map((r) => (
+            <li key={r.email} className="text-[11px]" style={{ color: r.renewed ? "#22C55E" : "#EF4444" }}>
+              {r.email}: {r.renewed
+                ? `renewed${r.renewed > 1 ? ` (${r.renewed} licences)` : ""} until ${new Date(r.until!).toLocaleDateString()}`
+                : r.error}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState("");
@@ -135,6 +207,8 @@ export default function MembersPage() {
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <RenewByEmail onDone={load} />
 
       <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[200px]">
