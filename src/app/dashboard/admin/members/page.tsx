@@ -68,61 +68,123 @@ const DEMO: Member[] = [
 
 type RenewResult = { email: string; renewed: number; until?: string; error?: string };
 
-/** After a renewal payment: paste the clients' emails and give each another window. */
+/**
+ * Every email address in a pasted text, tidied: WhatsApp lines ("[15:03, 11/11/2026] +27 ...: a@b.com"),
+ * lists, spreadsheet columns, sentences. Lower case, no stray dots or brackets around it, each once.
+ */
+function findEmails(text: string): string[] {
+  const found = text.match(/[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}/gi) ?? [];
+  const tidy = found.map((e) => e.toLowerCase().replace(/^[._%+-]+/, "").replace(/\.+$/, ""));
+  return [...new Set(tidy.filter((e) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(e)))];
+}
+
+/** How many emails go in one request: the server checks each one, so batches keep every call short. */
+const RENEW_BATCH = 25;
+
+/** After renewal payments: paste anything with the clients' emails in it and renew them all at once. */
 function RenewByEmail({ onDone }: { onDone: () => Promise<void> }) {
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [busy, setBusy] = useState("");
   const [results, setResults] = useState<RenewResult[] | null>(null);
   const [error, setError] = useState("");
 
-  const emails = text.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+  const emails = useMemo(() => findEmails(text).filter((e) => !skipped.includes(e)), [text, skipped]);
 
   const renew = async () => {
     if (!emails.length) return;
-    if (!confirm(`Renew access for ${emails.length} email${emails.length === 1 ? "" : "s"}?`)) return;
-    setBusy(true);
+    if (!confirm(`Renew access for ${emails.length} email${emails.length === 1 ? "" : "s"}? Each gets another 30 days.`)) return;
     setError("");
     setResults(null);
+    const done: RenewResult[] = [];
     try {
-      const res = await fetch("/api/admin/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ type: "renew", action: "byEmail", emails }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) setError(j.error || "Could not renew.");
-      else { setResults(j.results || []); setText(""); await onDone(); }
+      for (let i = 0; i < emails.length; i += RENEW_BATCH) {
+        const batch = emails.slice(i, i + RENEW_BATCH);
+        setBusy(`Renewing ${Math.min(i + batch.length, emails.length)} of ${emails.length}`);
+        const res = await fetch("/api/admin/actions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+          body: JSON.stringify({ type: "renew", action: "byEmail", emails: batch }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(`${j.error || "Could not renew."}${done.length ? ` The first ${done.length} were done; the rest were not.` : ""}`);
+          break;
+        }
+        done.push(...(j.results || []));
+      }
     } catch {
-      setError("Network error. Try again.");
+      setError(`Network error. Try again.${done.length ? ` The first ${done.length} were done.` : ""}`);
     }
-    setBusy(false);
+    if (done.length) {
+      setResults(done);
+      // Keep only what did not renew in the box, so a retry sends just those.
+      const failed = new Set(done.filter((r) => !r.renewed).map((r) => r.email));
+      const notSent = emails.slice(done.length);
+      setText([...failed, ...notSent].join("\n"));
+      setSkipped([]);
+      await onDone();
+    }
+    setBusy("");
   };
+
+  const renewedCount = results?.filter((r) => r.renewed).length ?? 0;
 
   return (
     <div className="rounded-2xl p-4 space-y-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
       <div>
         <p className="text-sm font-bold text-white">Renew by email</p>
         <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>
-          After a renewal payment. Paste one or more client emails. Each gets another 30 days, added after any time they still have.
+          After renewal payments. Paste anything with the emails in it: WhatsApp messages, a list, a spreadsheet column.
+          The emails are picked out, and each gets another 30 days, added after any time they still have.
         </p>
       </div>
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); setSkipped([]); }}
         rows={3}
-        placeholder="client@example.com, another@example.com"
+        placeholder="[15:03, 11/11/2026] +27 ...: client@example.com"
         className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none"
         style={{ background: "rgba(13,17,23,0.8)", border: `1px solid ${BORDER}` }}
       />
+      {emails.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[11px]" style={{ color: MUTED }}>
+            {emails.length} email{emails.length === 1 ? "" : "s"} found. Tap one to leave it out.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {emails.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setSkipped((s) => [...s, e])}
+                title="Leave this one out"
+                className="rounded-md px-2 py-1 text-[11px] text-white transition hover:line-through"
+                style={{ background: "rgba(10,132,255,0.12)", border: `1px solid ${BORDER}` }}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {text.trim() && emails.length === 0 && skipped.length === 0 && (
+        <p className="text-[11px] text-amber-400">No email address found in that text.</p>
+      )}
       <button
         onClick={renew}
-        disabled={busy || emails.length === 0}
+        disabled={!!busy || emails.length === 0}
         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition disabled:opacity-40"
         style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}
       >
-        <Check size={13} /> {busy ? "Renewing…" : `Renew ${emails.length || ""}`.trim()}
+        <Check size={13} /> {busy || `Renew ${emails.length || ""}`.trim()}
       </button>
       {error && <p className="text-xs text-red-400">{error}</p>}
+      {results && (
+        <p className="text-[11px] font-semibold" style={{ color: renewedCount === results.length ? "#22C55E" : "#F59E0B" }}>
+          {renewedCount} of {results.length} renewed{renewedCount < results.length ? `. The ${results.length - renewedCount} not renewed are left in the box.` : "."}
+        </p>
+      )}
       {results && (
         <ul className="space-y-1">
           {results.map((r) => (
