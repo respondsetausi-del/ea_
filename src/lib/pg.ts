@@ -30,6 +30,8 @@ export function sql(): postgres.Sql {
     max: 3,
     idle_timeout: 20,
     connect_timeout: 15,
+    // Never keep one connection forever: a socket the pooler dropped quietly is replaced in time.
+    max_lifetime: 60 * 5,
     onnotice: () => {},
     // The same shapes the pages already expect: ISO date strings and plain numbers.
     types: {
@@ -43,6 +45,36 @@ export function sql(): postgres.Sql {
     },
   });
   return globalThis.__naptuneSql;
+}
+
+/**
+ * A query that has not answered in QUERY_LIMIT_MS fails, and the connections are thrown away so
+ * the next request starts on fresh ones. On 11 Nov 2026 13:07 to 13:20 SA every route on the live
+ * site (sign-in, Members, the robots' engine-store) waited the full 300 seconds on stuck connections;
+ * this turns that into a quick error and a clean start.
+ */
+const QUERY_LIMIT_MS = 45_000;
+
+function dropConnections() {
+  const old = globalThis.__naptuneSql;
+  globalThis.__naptuneSql = undefined;
+  old?.end({ timeout: 0 }).catch(() => {});
+}
+
+export async function timed<T>(work: PromiseLike<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      console.error(`[db] no answer in ${QUERY_LIMIT_MS / 1000}s, starting fresh connections`);
+      dropConnections();
+      reject(new Error("The database did not answer in time. Please try again."));
+    }, QUERY_LIMIT_MS);
+  });
+  try {
+    return await Promise.race([Promise.resolve(work), limit]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const ident = (name: string) => {
@@ -121,14 +153,14 @@ export async function execute(plan: Plan): Promise<DbResult> {
       let count: number | null = null;
       if (plan.count) {
         const countParams = new Params();
-        const [row] = await sql().unsafe(`select count(*) as n from ${table}${whereClause(plan, countParams)}`, countParams.values);
+        const [row] = await timed(sql().unsafe(`select count(*) as n from ${table}${whereClause(plan, countParams)}`, countParams.values));
         count = Number(row.n);
         if (plan.head) return { data: null, error: null, count };
       }
       let text = `select ${columnList(plan.columns)} from ${table}${whereClause(plan, params)}`;
       if (plan.order.length) text += ` order by ${plan.order.map(([c, asc]) => `${ident(c)} ${asc ? "asc" : "desc"}`).join(", ")}`;
       if (plan.limit !== undefined) text += ` limit ${Math.max(0, Math.floor(Number(plan.limit)) || 0)}`;
-      return shaped([...(await sql().unsafe(text, params.values))], plan.one, count);
+      return shaped([...(await timed(sql().unsafe(text, params.values)))], plan.one, count);
     }
 
     const returning = plan.returning !== undefined ? ` returning ${columnList(plan.returning)}` : "";
@@ -163,7 +195,7 @@ export async function execute(plan: Plan): Promise<DbResult> {
       }
     }
 
-    const rows = await sql().unsafe(text + returning, params.values);
+    const rows = await timed(sql().unsafe(text + returning, params.values));
     return returning ? shaped([...rows], plan.one, null) : { data: null, error: null, count: null };
   } catch (e) {
     const err = e as { message?: string; code?: string };

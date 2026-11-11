@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import type postgres from "postgres";
-import { sql } from "@/lib/pg";
+import { sql, timed } from "@/lib/pg";
 
 /**
  * EA NAPTUNE's own sign-in (SERVER ONLY). Accounts live in eanaptune.auth_users
@@ -48,8 +48,8 @@ function readToken(token: string): { sub: string; pv: string } | null {
 }
 
 async function rowById(id: string): Promise<Row | null> {
-  const [row] = await sql()<Row[]>`
-    select id, email, encrypted_password, raw_user_meta_data from eanaptune.auth_users where id = ${id}`;
+  const [row] = await timed(sql()<Row[]>`
+    select id, email, encrypted_password, raw_user_meta_data from eanaptune.auth_users where id = ${id}`);
   return row ?? null;
 }
 
@@ -77,13 +77,13 @@ export async function signIn(rawEmail: string, password: string): Promise<SignIn
   const invalid = { error: "Invalid login credentials", status: 400 };
   if (!email || !password) return invalid;
 
-  const [{ n }] = await sql()<{ n: number }[]>`
+  const [{ n }] = await timed(sql()<{ n: number }[]>`
     select count(*) as n from eanaptune.login_failures
-    where email = ${email} and at > now() - make_interval(mins => ${FAILURE_WINDOW_MIN})`;
+    where email = ${email} and at > now() - make_interval(mins => ${FAILURE_WINDOW_MIN})`);
   if (Number(n) >= MAX_FAILURES) return { error: "Too many attempts. Please wait a few minutes and try again.", status: 429 };
 
-  const [row] = await sql()<(Row & { email_confirmed_at: string | null })[]>`
-    select id, email, encrypted_password, raw_user_meta_data, email_confirmed_at from eanaptune.auth_users where lower(email) = ${email}`;
+  const [row] = await timed(sql()<(Row & { email_confirmed_at: string | null })[]>`
+    select id, email, encrypted_password, raw_user_meta_data, email_confirmed_at from eanaptune.auth_users where lower(email) = ${email}`);
   const ok = row?.encrypted_password ? await bcrypt.compare(password, row.encrypted_password) : false;
   if (!row || !ok) {
     await sql()`insert into eanaptune.login_failures (email) values (${email})`;

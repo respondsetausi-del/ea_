@@ -145,18 +145,26 @@ export default function MembersPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [busy, setBusy] = useState<string | null>(null);
 
+  // Set when the list could not be loaded at all: the page then says so, with Retry,
+  // instead of waiting on "Loading" or showing an empty list as if there were no members.
+  const [loadFailed, setLoadFailed] = useState("");
+
   const load = useCallback(async () => {
     setError("");
+    setLoadFailed("");
     if (DEV_MODE) { setMembers(DEMO); return; }
     try {
-      const res = await fetch("/api/admin/overview", { headers: await authHeaders(), cache: "no-store" });
-      if (res.status === 403) { setError("You do not have admin access."); setMembers([]); return; }
-      if (!res.ok) { setError("Failed to load members."); setMembers([]); return; }
+      const res = await fetch("/api/admin/overview?view=members", {
+        headers: await authHeaders(),
+        cache: "no-store",
+        signal: AbortSignal.timeout(70_000),
+      });
+      if (res.status === 403) { setLoadFailed("You do not have admin access."); return; }
+      if (!res.ok) { setLoadFailed("The members list did not load. The server took too long or failed."); return; }
       const j = await res.json();
       setMembers(j.appUsers || []);
     } catch {
-      setError("Something went wrong.");
-      setMembers([]);
+      setLoadFailed("The members list did not load. Check your connection.");
     }
   }, []);
 
@@ -190,6 +198,20 @@ export default function MembersPage() {
     });
   }, [members, query, filter]);
 
+  if (loadFailed && members === null) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-400">{loadFailed}</p>
+        <button
+          onClick={() => { setLoadFailed(""); load(); }}
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:border-white/40"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (members === null) {
     return <p className="text-sm" style={{ color: MUTED }}>Loading members…</p>;
   }
@@ -207,6 +229,12 @@ export default function MembersPage() {
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
+      {loadFailed && (
+        <p className="text-xs text-red-400">
+          {loadFailed} The list below may be out of date.{" "}
+          <button onClick={() => load()} className="underline">Retry</button>
+        </p>
+      )}
 
       <RenewByEmail onDone={load} />
 
