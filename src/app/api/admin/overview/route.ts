@@ -4,6 +4,8 @@ import { resolveInstantActivationEA, INSTANT_ACTIVATION_EA_NAME } from "@/lib/in
 import { isBrevoConfigured } from "@/lib/brevo";
 
 export const dynamic = "force-dynamic";
+// Fail in a minute, not five: the page then shows an error with Retry instead of waiting.
+export const maxDuration = 60;
 
 /** Pull the live MQTT monitor from the app server (best-effort). */
 async function fetchMqtt(): Promise<unknown> {
@@ -12,7 +14,8 @@ async function fetchMqtt(): Promise<unknown> {
   try {
     const headers: Record<string, string> = {};
     if (process.env.ADMIN_API_KEY) headers["x-admin-key"] = process.env.ADMIN_API_KEY;
-    const res = await fetch(`${base}/api/admin/overview`, { headers, cache: "no-store" });
+    // Best effort: a slow app server must not hold the whole dashboard.
+    const res = await fetch(`${base}/api/admin/overview`, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) });
     if (!res.ok) return { configured: true, error: `App server returned ${res.status}` };
     return { configured: true, ...(await res.json()) };
   } catch (e) {
@@ -66,6 +69,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
   const supabase = gate.supabase;
+  // The Members page needs the clients, not the 31 days of site traffic (most of the
+  // payload) or the app server monitor, so it asks with ?view=members and skips both.
+  const membersOnly = req.nextUrl.searchParams.get("view") === "members";
 
   const eventsSince = new Date(Date.now() - 31 * 86_400_000).toISOString();
   const [{ data: distributors }, { data: eas }, { data: appUsers }, { data: adminEmails }, { data: mt5Conns }, { data: events }] = await Promise.all([
@@ -82,9 +88,11 @@ export async function GET(req: NextRequest) {
       .select("email, login, server, app, status, connect_count, first_connected_at, last_connected_at, last_heartbeat_at")
       .order("last_connected_at", { ascending: false }),
     // Site-traffic events (last 31 days) — visits + logins for the traffic tiles.
-    supabase.from("analytics_events")
-      .select("event_type, visitor_id, occurred_at")
-      .gte("occurred_at", eventsSince),
+    membersOnly
+      ? Promise.resolve({ data: [] as Array<{ event_type: string; visitor_id: string | null; occurred_at: string }>, error: null })
+      : supabase.from("analytics_events")
+        .select("event_type, visitor_id, occurred_at")
+        .gte("occurred_at", eventsSince),
   ]);
 
   const easList = eas || [];
@@ -377,7 +385,7 @@ export async function GET(req: NextRequest) {
       }
     : { configured: false, switchable: faSwitchable, expectedName: INSTANT_ACTIVATION_EA_NAME };
 
-  const mqtt = await fetchMqtt();
+  const mqtt = membersOnly ? { configured: false } : await fetchMqtt();
 
   // Platform settings. Defaults to require-payment when the table or row is
   // missing, matching /api/v1/authorize.
